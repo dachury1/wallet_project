@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "wallet_service",
+    "transaction_service",
+    "common",
+]
+resolver = "2"
