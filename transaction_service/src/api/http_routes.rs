@@ -1,8 +1,7 @@
 use axum::{
-    Router,
     routing::{get, post},
+    Router,
 };
-use uuid::Uuid;
 
 pub fn routes() -> Router {
     Router::new()
