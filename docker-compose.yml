@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   postgres:
     image: postgres:15-alpine
@@ -9,6 +11,44 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin -d wallet_db" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  wallet_service:
+    image: rust:latest
+    volumes:
+      - .:/app
+      - cargo_cache:/usr/local/cargo/registry
+    working_dir: /app/wallet_service
+    command: cargo run
+    environment:
+      DATABASE_URL: postgres://admin:password@postgres:5432/wallet_db
+      RUST_LOG: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3001:3000" # Mapping wallet_service to 3001 to avoid conflicts
+
+  transaction_service:
+    image: rust:latest
+    volumes:
+      - .:/app
+      - cargo_cache:/usr/local/cargo/registry
+    working_dir: /app/transaction_service
+    command: cargo run
+    environment:
+      DATABASE_URL: postgres://admin:password@postgres:5432/wallet_db
+      RUST_LOG: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3002:3000" # Mapping transaction_service to 3002
 
 volumes:
   postgres_data:
+  cargo_cache:
