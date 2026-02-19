@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(type_name = "varchar")]
+#[sqlx(type_name = "transaction_status", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum TransactionStatus {
     PENDING,
     COMPLETED,
@@ -13,7 +13,7 @@ pub enum TransactionStatus {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(type_name = "varchar")]
+#[sqlx(type_name = "transaction_type", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum TransactionType {
     TRANSFER,
     DEPOSIT,
