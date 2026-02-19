@@ -60,9 +60,7 @@ impl TransactionRepository for PostgresTransactionRepository {
         .map_err(|e| TransactionError::RepositoryError(e.to_string()))?;
 
         // Mapeamos de vuelta al dominio
-        saved_model
-            .try_into()
-            .map_err(|e: String| TransactionError::InvalidState(e))
+        Ok(saved_model.into())
     }
 
     /// Actualiza el estado de una transacción existente (UPDATE).
@@ -88,9 +86,7 @@ impl TransactionRepository for PostgresTransactionRepository {
         .map_err(|e| TransactionError::RepositoryError(e.to_string()))?;
 
         match updated_model {
-            Some(m) => Ok(m
-                .try_into()
-                .map_err(|e: String| TransactionError::InvalidState(e))?),
+            Some(m) => Ok(m.into()),
             None => Err(TransactionError::NotFound(transaction.id)),
         }
     }
@@ -105,11 +101,7 @@ impl TransactionRepository for PostgresTransactionRepository {
                 .map_err(|e| TransactionError::RepositoryError(e.to_string()))?;
 
         if let Some(model) = model_opt {
-            Ok(Some(
-                model
-                    .try_into()
-                    .map_err(|e: String| TransactionError::InvalidState(e))?,
-            ))
+            Ok(Some(model.into()))
         } else {
             Ok(None)
         }
@@ -137,11 +129,7 @@ impl TransactionRepository for PostgresTransactionRepository {
 
         let mut transactions = Vec::new();
         for model in models {
-            transactions.push(
-                model
-                    .try_into()
-                    .map_err(|e: String| TransactionError::InvalidState(e))?,
-            );
+            transactions.push(model.into());
         }
 
         Ok(transactions)
@@ -163,11 +151,7 @@ impl TransactionRepository for PostgresTransactionRepository {
         .map_err(|e| TransactionError::RepositoryError(e.to_string()))?;
 
         if let Some(model) = model_opt {
-            Ok(Some(
-                model
-                    .try_into()
-                    .map_err(|e: String| TransactionError::InvalidState(e))?,
-            ))
+            Ok(Some(model.into()))
         } else {
             Ok(None)
         }
@@ -193,11 +177,7 @@ impl TransactionRepository for PostgresTransactionRepository {
 
         let mut transactions = Vec::new();
         for model in models {
-            transactions.push(
-                model
-                    .try_into()
-                    .map_err(|e: String| TransactionError::InvalidState(e))?,
-            );
+            transactions.push(model.into());
         }
 
         Ok(transactions)
