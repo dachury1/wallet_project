@@ -14,4 +14,16 @@ pub enum TransactionError {
 
     #[error("Validation failed: {0}")]
     ValidationError(String),
+
+    #[error("Amount must be positive")]
+    InvalidAmount,
+
+    #[error("Source and destination wallets must be different")]
+    SameWallet,
+
+    #[error("Idempotency conflict: Transaction with correlation_id {0} already exists")]
+    IdempotencyError(Uuid),
+
+    #[error("Wallet Gateway error: {0}")]
+    GatewayError(String),
 }

@@ -13,7 +13,7 @@ pub struct TransactionModel {
     pub status: TransactionStatus,
     pub transaction_type: TransactionType,
     pub created_at: DateTime<Utc>,
-    pub correlation_id: Option<Uuid>,
+    pub correlation_id: Uuid,
 }
 
 impl From<&Transaction> for TransactionModel {

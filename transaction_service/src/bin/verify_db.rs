@@ -41,7 +41,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         status: TransactionStatus::PENDING,
         transaction_type: TransactionType::TRANSFER,
         created_at: Utc::now(),
-        correlation_id: Some(Uuid::new_v4()),
+        correlation_id: Uuid::new_v4(),
     };
 
     println!("Attempting to save transaction: {:?}", new_transaction);
