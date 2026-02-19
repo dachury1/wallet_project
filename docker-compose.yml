@@ -6,11 +6,12 @@ services:
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: wallet_db
+      # POSTGRES_DB is removed because we init multiple DBs via script
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init_db.sh:/docker-entrypoint-initdb.d/init_db.sh
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U admin -d wallet_db" ]
       interval: 5s
@@ -18,12 +19,9 @@ services:
       retries: 5
 
   wallet_service:
-    image: rust:latest
-    volumes:
-      - .:/app
-      - cargo_cache:/usr/local/cargo/registry
-    working_dir: /app/wallet_service
-    command: cargo run
+    build:
+      context: .
+      dockerfile: wallet_service/Dockerfile
     environment:
       DATABASE_URL: postgres://admin:password@postgres:5432/wallet_db
       RUST_LOG: info
@@ -31,24 +29,21 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "3001:3000" # Mapping wallet_service to 3001 to avoid conflicts
+      - "3001:3000"
 
   transaction_service:
-    image: rust:latest
-    volumes:
-      - .:/app
-      - cargo_cache:/usr/local/cargo/registry
-    working_dir: /app/transaction_service
-    command: cargo run
+    build:
+      context: .
+      dockerfile: transaction_service/Dockerfile
     environment:
-      DATABASE_URL: postgres://admin:password@postgres:5432/wallet_db
+      DATABASE_URL: postgres://admin:password@postgres:5432/transaction_db
       RUST_LOG: info
     depends_on:
       postgres:
         condition: service_healthy
     ports:
-      - "3002:3000" # Mapping transaction_service to 3002
+      - "3002:3000"
 
 volumes:
   postgres_data:
-  cargo_cache:
+  cargo_cache: # This volume is no longer used by the services directly, but could be used in Dockerfile with BuildKit cache mounts if optimized later.
