@@ -3,7 +3,8 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "varchar")]
 pub enum TransactionStatus {
     PENDING,
     COMPLETED,
@@ -11,7 +12,8 @@ pub enum TransactionStatus {
     REVERSED,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "varchar")]
 pub enum TransactionType {
     TRANSFER,
     DEPOSIT,

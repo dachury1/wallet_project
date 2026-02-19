@@ -2454,6 +2454,7 @@ dependencies = [
  "rust_decimal",
  "serde",
  "sqlx",
+ "thiserror",
  "tokio",
  "tonic",
  "tracing",

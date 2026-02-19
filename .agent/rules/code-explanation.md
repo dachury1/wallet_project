@@ -5,9 +5,11 @@
 - **Why, Not Just What**: Focus on the reasoning behind the implementation choices, not just a line-by-line translation.
 - **Contextualize**: Explain how the new code fits into the existing architecture.
 
-## 2. Documentation Standards
-- **Public API**: All public functions, structs, traits, and enums MUST have documentation comments (`///`).
-- **Complex Logic**: Add inline comments (`//`) to explain complex algorithms, edge cases, or non-obvious logic.
+## 2. Documentation Standards (STRICT ENFORCEMENT)
+- **Mandatory Logic Explanation**: Every function and method MUST have a preceding documentation comment (`///` or `//`) explaining its **Purpose**, **Parameters**, and **Return Value**.
+- **Preserve Existing Comments**: When modifying existing code, you MUST NOT delete existing helpful comments unless they are obsolete. If you rewrite logic, rewrite the corresponding comments.
+- **No Silent Code Drops**: Do not remove documentation during refactoring. If a function is complex, add inline comments explaining the *why* of the logic steps.
+- **Self-Documenting Code**: While code should be readable, always supplement it with comments that explain the *intent* and *business logic*, not just syntax.
 - **Examples**: Where applicable, include usage examples in the documentation to demonstrate intended use.
 
 ## 3. Library Usage Rationale
