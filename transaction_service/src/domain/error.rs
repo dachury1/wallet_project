@@ -1,7 +1,7 @@
 use thiserror::Error;
 use uuid::Uuid;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum TransactionError {
     #[error("Transaction not found with ID: {0}")]
     NotFound(Uuid),

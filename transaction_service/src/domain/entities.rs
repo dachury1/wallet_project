@@ -70,3 +70,64 @@ impl Transaction {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rstest::rstest;
+    use rust_decimal::Decimal;
+
+    #[test]
+    fn test_create_transfer_success() {
+        let source = Uuid::new_v4();
+        let dest = Uuid::new_v4();
+        let amount = Decimal::from(100);
+        let correlation_id = Uuid::new_v4();
+
+        let tx = Transaction::new(Some(source), dest, amount, correlation_id).unwrap();
+
+        assert_eq!(tx.transaction_type, TransactionType::TRANSFER);
+        assert_eq!(tx.status, TransactionStatus::PENDING);
+        assert_eq!(tx.amount, amount);
+        assert_eq!(tx.source_wallet_id, Some(source));
+        assert_eq!(tx.destination_wallet_id, dest);
+    }
+
+    #[test]
+    fn test_create_deposit_success() {
+        let dest = Uuid::new_v4();
+        let amount = Decimal::from(50);
+        let correlation_id = Uuid::new_v4();
+
+        let tx = Transaction::new(None, dest, amount, correlation_id).unwrap();
+
+        assert_eq!(tx.transaction_type, TransactionType::DEPOSIT);
+        assert_eq!(tx.status, TransactionStatus::PENDING);
+        assert_eq!(tx.source_wallet_id, None);
+    }
+
+    #[rstest]
+    #[case(0)]
+    #[case(-10)]
+    fn test_create_invalid_amount(#[case] amount_val: i64) {
+        let source = Uuid::new_v4();
+        let dest = Uuid::new_v4();
+        let correlation_id = Uuid::new_v4();
+        let amount = Decimal::from(amount_val);
+
+        let result = Transaction::new(Some(source), dest, amount, correlation_id);
+
+        assert_eq!(result.unwrap_err(), TransactionError::InvalidAmount);
+    }
+
+    #[test]
+    fn test_create_same_wallet_error() {
+        let wallet_id = Uuid::new_v4();
+        let amount = Decimal::from(100);
+        let correlation_id = Uuid::new_v4();
+
+        let result = Transaction::new(Some(wallet_id), wallet_id, amount, correlation_id);
+
+        assert_eq!(result.unwrap_err(), TransactionError::SameWallet);
+    }
+}

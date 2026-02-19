@@ -108,3 +108,179 @@ impl ProcessTransactionUseCase {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::domain::entities::{Transaction, TransactionStatus, TransactionType};
+    use crate::domain::error::TransactionError;
+    use crate::domain::gateways::WalletGateway;
+    use crate::domain::repository::TransactionRepository;
+    use async_trait::async_trait;
+    use chrono::{DateTime, Utc};
+    use mockall::mock;
+    use mockall::predicate::*;
+    use rust_decimal::Decimal;
+    use std::sync::Arc;
+    use uuid::Uuid;
+
+    mock! {
+        pub TransactionRepositoryImpl {}
+
+        #[async_trait]
+        impl TransactionRepository for TransactionRepositoryImpl {
+            async fn save(&self, transaction: Transaction) -> Result<Transaction, TransactionError>;
+            async fn update(&self, transaction: Transaction) -> Result<Transaction, TransactionError>;
+            async fn find_by_id(&self, id: Uuid) -> Result<Option<Transaction>, TransactionError>;
+            async fn find_by_wallet_id(&self, wallet_id: Uuid) -> Result<Vec<Transaction>, TransactionError>;
+            async fn find_by_correlation_id(&self, correlation_id: Uuid) -> Result<Option<Transaction>, TransactionError>;
+            async fn find_pending_older_than(&self, timestamp: DateTime<Utc>) -> Result<Vec<Transaction>, TransactionError>;
+        }
+    }
+
+    mock! {
+        pub WalletGatewayImpl {}
+
+        #[async_trait]
+        impl WalletGateway for WalletGatewayImpl {
+            async fn process_movement(&self, transaction: &Transaction) -> Result<bool, TransactionError>;
+        }
+    }
+
+    #[tokio::test]
+    async fn test_process_transaction_idempotency() {
+        // Arrange
+        let mut mock_repo = MockTransactionRepositoryImpl::new();
+        let mock_gateway = MockWalletGatewayImpl::new();
+
+        let correlation_id = Uuid::new_v4();
+        let existing_tx = Transaction {
+            id: Uuid::new_v4(),
+            source_wallet_id: Some(Uuid::new_v4()),
+            destination_wallet_id: Uuid::new_v4(),
+            amount: Decimal::from(100),
+            status: TransactionStatus::COMPLETED,
+            transaction_type: TransactionType::TRANSFER,
+            created_at: Utc::now(),
+            correlation_id,
+        };
+        let expected_tx = existing_tx.clone();
+
+        mock_repo
+            .expect_find_by_correlation_id()
+            .with(eq(correlation_id))
+            .times(1)
+            .returning(move |_| Ok(Some(existing_tx.clone())));
+
+        let use_case = ProcessTransactionUseCase::new(Arc::new(mock_repo), Arc::new(mock_gateway));
+
+        // Act
+        let result = use_case
+            .execute(
+                Some(Uuid::new_v4()),
+                Uuid::new_v4(),
+                Decimal::from(100),
+                correlation_id,
+            )
+            .await;
+
+        // Assert
+        assert!(result.is_ok());
+        let tx = result.unwrap();
+        assert_eq!(tx.id, expected_tx.id);
+        assert_eq!(tx.status, TransactionStatus::COMPLETED);
+    }
+
+    #[tokio::test]
+    async fn test_process_transaction_success() {
+        // Arrange
+        let mut mock_repo = MockTransactionRepositoryImpl::new();
+        let mut mock_gateway = MockWalletGatewayImpl::new();
+
+        let source_wallet = Uuid::new_v4();
+        let dest_wallet = Uuid::new_v4();
+        let amount = Decimal::from(100);
+        let correlation_id = Uuid::new_v4();
+
+        // 1. Check idempotency (returns None)
+        mock_repo
+            .expect_find_by_correlation_id()
+            .with(eq(correlation_id))
+            .times(1)
+            .returning(|_| Ok(None));
+
+        // 2. Save PENDING
+        mock_repo.expect_save().times(1).returning(|tx| Ok(tx)); // Return what was passed (with generated ID)
+
+        // 3. Call Wallet Gateway (returns true)
+        mock_gateway
+            .expect_process_movement()
+            .times(1)
+            .returning(|_| Ok(true));
+
+        // 4. Update COMPLETED
+        mock_repo
+            .expect_update()
+            .with(function(|tx: &Transaction| {
+                tx.status == TransactionStatus::COMPLETED
+            }))
+            .times(1)
+            .returning(|tx| Ok(tx));
+
+        let use_case = ProcessTransactionUseCase::new(Arc::new(mock_repo), Arc::new(mock_gateway));
+
+        // Act
+        let result = use_case
+            .execute(Some(source_wallet), dest_wallet, amount, correlation_id)
+            .await;
+
+        // Assert (verify result state, though mock expectations cover flow)
+        assert!(result.is_ok());
+        // Note: result will contain what expect_update returned.
+    }
+
+    #[tokio::test]
+    async fn test_process_transaction_gateway_failure() {
+        // Arrange
+        let mut mock_repo = MockTransactionRepositoryImpl::new();
+        let mut mock_gateway = MockWalletGatewayImpl::new();
+
+        let source_wallet = Uuid::new_v4();
+        let dest_wallet = Uuid::new_v4();
+        let amount = Decimal::from(50);
+        let correlation_id = Uuid::new_v4();
+
+        mock_repo
+            .expect_find_by_correlation_id()
+            .returning(|_| Ok(None));
+        mock_repo.expect_save().returning(|tx| Ok(tx));
+
+        // Gateway returns false (e.g. insufficient funds)
+        mock_gateway
+            .expect_process_movement()
+            .returning(|_| Ok(false));
+
+        // Should update to FAILED
+        mock_repo
+            .expect_update()
+            .with(function(|tx: &Transaction| {
+                tx.status == TransactionStatus::FAILED
+            }))
+            .times(1)
+            .returning(|tx| Ok(tx));
+
+        let use_case = ProcessTransactionUseCase::new(Arc::new(mock_repo), Arc::new(mock_gateway));
+
+        // Act
+        let result = use_case
+            .execute(Some(source_wallet), dest_wallet, amount, correlation_id)
+            .await;
+
+        // Assert
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            TransactionError::GatewayError("Wallet rejected the transaction".to_string())
+        );
+    }
+}
