@@ -172,4 +172,34 @@ impl TransactionRepository for PostgresTransactionRepository {
             Ok(None)
         }
     }
+
+    /// Busca transacciones pendientes antiguas.
+    async fn find_pending_older_than(
+        &self,
+        timestamp: chrono::DateTime<chrono::Utc>,
+    ) -> Result<Vec<Transaction>, TransactionError> {
+        let models = sqlx::query_as::<_, TransactionModel>(
+            r#"
+            SELECT * FROM transactions 
+            WHERE status = 'PENDING' AND created_at < $1
+            ORDER BY created_at ASC
+            LIMIT 50
+            "#,
+        )
+        .bind(timestamp)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| TransactionError::RepositoryError(e.to_string()))?;
+
+        let mut transactions = Vec::new();
+        for model in models {
+            transactions.push(
+                model
+                    .try_into()
+                    .map_err(|e: String| TransactionError::InvalidState(e))?,
+            );
+        }
+
+        Ok(transactions)
+    }
 }

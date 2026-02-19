@@ -43,4 +43,12 @@ pub trait TransactionRepository: Send + Sync {
         &self,
         correlation_id: Uuid,
     ) -> Result<Option<Transaction>, TransactionError>;
+
+    /// Busca transacciones que han quedado en estado PENDING por más de cierto tiempo.
+    ///
+    /// Utilizado por jobs en segundo plano para reintentar o revertir transacciones atascadas.
+    async fn find_pending_older_than(
+        &self,
+        timestamp: chrono::DateTime<chrono::Utc>,
+    ) -> Result<Vec<Transaction>, TransactionError>;
 }
