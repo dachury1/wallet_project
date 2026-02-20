@@ -5,6 +5,13 @@ use uuid::Uuid;
 
 use super::error::TransactionError;
 
+/// Estado de una transacción en el sistema.
+///
+/// # Examples
+/// ```
+/// use transaction_service::domain::entities::TransactionStatus;
+/// let status = TransactionStatus::PENDING;
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
 #[sqlx(type_name = "transaction_status", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum TransactionStatus {
@@ -14,6 +21,13 @@ pub enum TransactionStatus {
     REVERSED,
 }
 
+/// Tipo de transacción financiera.
+///
+/// # Examples
+/// ```
+/// use transaction_service::domain::entities::TransactionType;
+/// let tx_type = TransactionType::DEPOSIT;
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
 #[sqlx(type_name = "transaction_type", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum TransactionType {
@@ -22,6 +36,16 @@ pub enum TransactionType {
     WITHDRAWAL,
 }
 
+/// Entidad que representa una transacción financiera entre billeteras.
+///
+/// # Examples
+/// ```
+/// use transaction_service::domain::entities::Transaction;
+/// use uuid::Uuid;
+/// use rust_decimal_macros::dec;
+///
+/// let tx = Transaction::new(None, Uuid::new_v4(), dec!(100.0), Uuid::new_v4()).unwrap();
+/// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Transaction {
     pub id: Uuid,
@@ -35,6 +59,21 @@ pub struct Transaction {
 }
 
 impl Transaction {
+    /// Inicializa una nueva instancia de `Transaction`.
+    ///
+    /// Valida que el monto sea positivo, que la billetera origen (si existe) sea diferente
+    /// de la destino, y determina el tipo de transacción en base a la existencia de la billetera origen.
+    ///
+    /// # Examples
+    /// ```
+    /// use transaction_service::domain::entities::Transaction;
+    /// use uuid::Uuid;
+    /// use rust_decimal_macros::dec;
+    ///
+    /// let correlation_id = Uuid::new_v4();
+    /// let tx = Transaction::new(None, Uuid::new_v4(), dec!(50.0), correlation_id);
+    /// assert!(tx.is_ok());
+    /// ```
     pub fn new(
         source_wallet: Option<Uuid>,
         dest_wallet: Uuid,

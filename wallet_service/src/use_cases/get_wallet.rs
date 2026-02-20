@@ -7,6 +7,16 @@ use uuid::Uuid;
 /// Encapsula la lógica necesaria para consultar una única billetera y
 /// devolver un error `WalletError::NotFound` estándar si la base de datos
 /// no arroja resultados.
+///
+/// # Examples
+/// ```ignore
+/// use wallet_service::use_cases::get_wallet::GetWalletUseCase;
+/// use wallet_service::domain::repository::MockWalletRepository;
+/// use std::sync::Arc;
+///
+/// let repo = Arc::new(MockWalletRepository::new());
+/// let use_case = GetWalletUseCase::new(repo);
+/// ```
 #[derive(Clone)]
 pub struct GetWalletUseCase {
     wallet_repo: Arc<dyn WalletRepository>,
@@ -31,6 +41,13 @@ impl GetWalletUseCase {
     ///
     /// Devuelve un `Result<Wallet, WalletError>`. Si la billetera existe,
     /// se retorna satisfactoriamente. Si no existe, lanza un `WalletError::NotFound`.
+    ///
+    /// # Examples
+    /// ```ignore
+    /// use uuid::Uuid;
+    /// let wallet_id = Uuid::new_v4();
+    /// let wallet = use_case.execute(wallet_id).await.unwrap();
+    /// ```
     #[tracing::instrument(name = "GetWalletUseCase::execute", skip(self))]
     pub async fn execute(&self, wallet_id: Uuid) -> Result<Wallet, WalletError> {
         self.wallet_repo

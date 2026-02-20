@@ -6,6 +6,16 @@ use std::sync::Arc;
 /// Este struct orquesta el flujo para registrar un nuevo usuario en el sistema.
 /// Implementa las reglas de negocio necesarias antes de interactuar con la capa
 /// de persistencia (repositorio).
+///
+/// # Examples
+/// ```ignore
+/// use wallet_service::use_cases::create_user::CreateUserUseCase;
+/// use wallet_service::domain::repository::MockUserRepository;
+/// use std::sync::Arc;
+///
+/// let repo = Arc::new(MockUserRepository::new());
+/// let use_case = CreateUserUseCase::new(repo);
+/// ```
 pub struct CreateUserUseCase {
     /// Dependencia inyectada del repositorio de usuarios.
     /// Se utiliza `Arc` para permitir que el caso de uso sea compartido (clonado
@@ -34,6 +44,11 @@ impl CreateUserUseCase {
     ///     * `UsernameTaken` si el nombre ya está registrado.
     ///     * `InvalidData` si el usuario no pasó las reglas del dominio al crearse.
     ///     * `RepositoryError` ante fallos de conexión o consultas en la base de datos.
+    ///
+    /// # Examples
+    /// ```ignore
+    /// let result = use_case.execute("alice".to_string(), "alice@example.com".to_string()).await;
+    /// ```
     pub async fn execute(&self, username: String, email: String) -> Result<User, UserError> {
         // Valida que no existan duplicados antes de instanciar un nuevo usuario.
         if self.user_repo.exists_by_username(&username).await? {

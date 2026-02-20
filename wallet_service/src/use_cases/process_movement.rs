@@ -7,6 +7,16 @@ use uuid::Uuid;
 ///
 /// Encapsula la lógica de llamar al repositorio para realizar la actualización
 /// atómica del balance en la base de datos.
+///
+/// # Examples
+/// ```ignore
+/// use wallet_service::use_cases::process_movement::ProcessMovementUseCase;
+/// use wallet_service::domain::repository::MockWalletRepository;
+/// use std::sync::Arc;
+///
+/// let repo = Arc::new(MockWalletRepository::new());
+/// let use_case = ProcessMovementUseCase::new(repo);
+/// ```
 #[derive(Clone)]
 pub struct ProcessMovementUseCase {
     wallet_repo: Arc<dyn WalletRepository>,
@@ -36,6 +46,16 @@ impl ProcessMovementUseCase {
     ///
     /// Devuelve un `Result<(), WalletError>`. Falla con `WalletError::NotFound` si la billetera no existe
     /// o `WalletError::InsufficientFunds` en caso de un balance no viable.
+    ///
+    /// # Examples
+    /// ```ignore
+    /// use uuid::Uuid;
+    /// use rust_decimal_macros::dec;
+    ///
+    /// let wallet_id = Uuid::new_v4();
+    /// let amount = dec!(50.0);
+    /// use_case.execute(wallet_id, amount).await.unwrap();
+    /// ```
     #[tracing::instrument(name = "ProcessMovementUseCase::execute", skip(self))]
     pub async fn execute(
         &self,

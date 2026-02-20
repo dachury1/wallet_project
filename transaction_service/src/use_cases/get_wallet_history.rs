@@ -8,6 +8,16 @@ use uuid::Uuid;
 ///
 /// Encapsula la lógica de buscar transacciones (tanto depósitos, como retiros y transferencias)
 /// utilizando el repositorio de persistencia `TransactionRepository`.
+///
+/// # Examples
+/// ```ignore
+/// use transaction_service::use_cases::get_wallet_history::GetWalletHistoryUseCase;
+/// use transaction_service::domain::repository::MockTransactionRepositoryImpl;
+/// use std::sync::Arc;
+///
+/// let repo = Arc::new(MockTransactionRepositoryImpl::new());
+/// let use_case = GetWalletHistoryUseCase::new(repo);
+/// ```
 #[derive(Clone)]
 pub struct GetWalletHistoryUseCase {
     transaction_repo: Arc<dyn TransactionRepository>,
@@ -33,6 +43,13 @@ impl GetWalletHistoryUseCase {
     ///
     /// Devuelve un `Result<Vec<Transaction>, TransactionError>`. Retorna una colección
     /// (quizás vacía si no hay transacciones) de `Transaction`s al tener una operación en BD exitosa.
+    ///
+    /// # Examples
+    /// ```ignore
+    /// use uuid::Uuid;
+    /// let wallet_id = Uuid::new_v4();
+    /// let history = use_case.execute(wallet_id).await.unwrap();
+    /// ```
     #[tracing::instrument(name = "GetWalletHistoryUseCase::execute", skip(self))]
     pub async fn execute(&self, wallet_id: Uuid) -> Result<Vec<Transaction>, TransactionError> {
         self.transaction_repo.find_by_wallet_id(wallet_id).await

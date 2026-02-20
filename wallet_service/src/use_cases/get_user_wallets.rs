@@ -6,6 +6,16 @@ use uuid::Uuid;
 ///
 /// Este struct encapsula la lógica de buscar billeteras utilizando el repositorio,
 /// abstrayendo detalles de implementación (como la base de datos).
+///
+/// # Examples
+/// ```ignore
+/// use wallet_service::use_cases::get_user_wallets::GetWalletsUseCase;
+/// use wallet_service::domain::repository::MockWalletRepository;
+/// use std::sync::Arc;
+///
+/// let repo = Arc::new(MockWalletRepository::new());
+/// let use_case = GetWalletsUseCase::new(repo);
+/// ```
 #[derive(Clone)]
 pub struct GetWalletsUseCase {
     wallet_repo: Arc<dyn WalletRepository>,
@@ -30,6 +40,13 @@ impl GetWalletsUseCase {
     ///
     /// Devuelve un `Result<Vec<Wallet>, WalletError>`. Retorna el listado de
     /// billeteras en caso de éxito o un error de billetera.
+    ///
+    /// # Examples
+    /// ```ignore
+    /// use uuid::Uuid;
+    /// let user_id = Uuid::new_v4();
+    /// let wallets = use_case.execute(user_id).await.unwrap();
+    /// ```
     #[tracing::instrument(name = "GetWalletsUseCase::execute", skip(self))]
     pub async fn execute(&self, user_id: Uuid) -> Result<Vec<Wallet>, WalletError> {
         self.wallet_repo.find_by_user_id(user_id).await

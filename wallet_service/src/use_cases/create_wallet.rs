@@ -6,6 +6,17 @@ use crate::domain::{
 use std::sync::Arc;
 use uuid::Uuid;
 /// Caso de uso que gestiona la creación segura de una Wallet para un Usuario.
+///
+/// # Examples
+/// ```ignore
+/// use wallet_service::use_cases::create_wallet::CreateWalletUseCase;
+/// use wallet_service::domain::repository::{MockUserRepository, MockWalletRepository};
+/// use std::sync::Arc;
+///
+/// let user_repo = Arc::new(MockUserRepository::new());
+/// let wallet_repo = Arc::new(MockWalletRepository::new());
+/// let use_case = CreateWalletUseCase::new(wallet_repo, user_repo);
+/// ```
 pub struct CreateWalletUseCase {
     wallet_repo: Arc<dyn WalletRepository>,
     user_repo: Arc<dyn UserRepository>,
@@ -23,6 +34,13 @@ impl CreateWalletUseCase {
     /// Ejecuta el caso de uso para crear una nueva Wallet.
     /// Valida que el usuario exista en BD antes de proveer una nueva Wallet.
     /// Utiliza el patrón Builder de `Wallet` para asegurar que el estado contenga valores válidos.
+    ///
+    /// # Examples
+    /// ```ignore
+    /// use uuid::Uuid;
+    /// let user_id = Uuid::new_v4();
+    /// let wallet = use_case.execute(user_id, "USD".to_string(), "Main".to_string()).await;
+    /// ```
     pub async fn execute(
         &self,
         user_id: Uuid,

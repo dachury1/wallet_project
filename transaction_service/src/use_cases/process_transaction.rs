@@ -8,6 +8,22 @@ use rust_decimal::Decimal;
 use std::sync::Arc;
 use uuid::Uuid;
 
+/// Caso de uso central para el procesamiento y orquestamiento de transacciones.
+///
+/// Coordina la persistencia en la base de datos de transacciones, chequea la
+/// idempotencia e interactúa con el `WalletGateway` para actualizar saldos.
+///
+/// # Examples
+/// ```ignore
+/// use transaction_service::use_cases::process_transaction::ProcessTransactionUseCase;
+/// use transaction_service::domain::repository::MockTransactionRepositoryImpl;
+/// use transaction_service::domain::gateways::MockWalletGatewayImpl;
+/// use std::sync::Arc;
+///
+/// let repo = Arc::new(MockTransactionRepositoryImpl::new());
+/// let gateway = Arc::new(MockWalletGatewayImpl::new());
+/// let use_case = ProcessTransactionUseCase::new(repo, gateway);
+/// ```
 pub struct ProcessTransactionUseCase {
     transaction_repo: Arc<dyn TransactionRepository>,
     wallet_gateway: Arc<dyn WalletGateway>,
@@ -24,6 +40,19 @@ impl ProcessTransactionUseCase {
         }
     }
 
+    /// Ejecuta el proceso de inicio y completitud de una transacción, manejando su estado transicional.
+    ///
+    /// Valida la idempotencia basándose en `correlation_id`, crea la entidad `Transaction`, la
+    /// guarda inicialmente como "PENDING", hace el llamado por external gateway, y finaliza
+    /// guardando el estado como "COMPLETED" o "FAILED".
+    ///
+    /// # Examples
+    /// ```ignore
+    /// use uuid::Uuid;
+    /// use rust_decimal_macros::dec;
+    /// let dest = Uuid::new_v4();
+    /// let tx = use_case.execute(None, dest, dec!(100.0), Uuid::new_v4()).await.unwrap();
+    /// ```
     pub async fn execute(
         &self,
         source_wallet: Option<Uuid>,

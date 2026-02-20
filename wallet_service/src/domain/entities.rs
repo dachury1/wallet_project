@@ -5,7 +5,16 @@ use uuid::Uuid;
 
 use crate::domain::error::{UserError, WalletError};
 
-// Modelo de Entidad: User
+/// Modelo de Entidad: User.
+/// Representa a un usuario dentro del sistema, con su información básica de identidad.
+///
+/// # Examples
+/// ```
+/// use wallet_service::domain::entities::User;
+///
+/// let user = User::new("johndoe".to_string(), "john@example.com".to_string()).unwrap();
+/// assert_eq!(user.username, "johndoe");
+/// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
     pub id: Uuid,
@@ -15,6 +24,17 @@ pub struct User {
 }
 
 impl User {
+    /// Inicializa una nueva instancia válida de `User`.
+    ///
+    /// Valida que el nombre de usuario y el correo no estén vacíos.
+    ///
+    /// # Examples
+    /// ```
+    /// use wallet_service::domain::entities::User;
+    ///
+    /// let user = User::new("user1".to_string(), "user1@test.com".to_string());
+    /// assert!(user.is_ok());
+    /// ```
     pub fn new(username: String, email: String) -> Result<Self, UserError> {
         if username.trim().is_empty() || email.trim().is_empty() {
             return Err(UserError::InvalidData(
@@ -31,7 +51,22 @@ impl User {
     }
 }
 
-// Modelo de Entidad: Wallet
+/// Modelo de Entidad: Wallet.
+/// Representa una billetera de un usuario, que alinea fondos en una divisa específica e implementa optimistic locking.
+///
+/// # Examples
+/// ```
+/// use wallet_service::domain::entities::Wallet;
+/// use uuid::Uuid;
+///
+/// let wallet_builder = Wallet::builder();
+/// let wallet = wallet_builder
+///     .user_id(Uuid::new_v4())
+///     .label("My Wallet".to_string())
+///     .currency("USD".to_string())
+///     .build();
+/// assert!(wallet.is_ok());
+/// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Wallet {
     pub id: Uuid,
@@ -43,13 +78,31 @@ pub struct Wallet {
 }
 
 impl Wallet {
-    /// Inicia la construcción de una instancia `Wallet` con el patrón Builder
+    /// Inicia la construcción de una instancia `Wallet` con el patrón Builder.
+    ///
+    /// # Examples
+    /// ```
+    /// use wallet_service::domain::entities::Wallet;
+    ///
+    /// let builder = Wallet::builder();
+    /// ```
     pub fn builder() -> WalletBuilder {
         WalletBuilder::default()
     }
 }
 
-/// Builder para asegurar que al instanciarse la entidad Wallet, todas las reglas de negocio base aplican (como validación de campos)
+/// Builder para asegurar que al instanciarse la entidad Wallet, todas las reglas de negocio base aplican (como validación de campos).
+///
+/// # Examples
+/// ```
+/// use wallet_service::domain::entities::WalletBuilder;
+/// use uuid::Uuid;
+///
+/// let builder = WalletBuilder::default()
+///     .user_id(Uuid::new_v4())
+///     .label("Savings".to_string())
+///     .currency("EUR".to_string());
+/// ```
 #[derive(Default)]
 pub struct WalletBuilder {
     user_id: Option<Uuid>,
@@ -73,7 +126,20 @@ impl WalletBuilder {
         self
     }
 
-    /// Construye y valida la entidad instanciada
+    /// Construye y valida la entidad instanciada.
+    ///
+    /// # Examples
+    /// ```
+    /// use wallet_service::domain::entities::Wallet;
+    /// use uuid::Uuid;
+    ///
+    /// let wallet = Wallet::builder()
+    ///     .user_id(Uuid::new_v4())
+    ///     .label("Main".to_string())
+    ///     .currency("USD".to_string())
+    ///     .build();
+    /// assert!(wallet.is_ok());
+    /// ```
     pub fn build(self) -> Result<Wallet, WalletError> {
         let user_id = self
             .user_id
