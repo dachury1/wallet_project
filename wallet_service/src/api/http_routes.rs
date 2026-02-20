@@ -5,6 +5,7 @@ use axum::{
 };
 use serde::Deserialize;
 use std::sync::Arc;
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::api::error::ApiError;
@@ -13,6 +14,8 @@ use crate::use_cases::create_user::CreateUserUseCase;
 use crate::use_cases::create_wallet::CreateWalletUseCase;
 use crate::use_cases::get_user_wallets::GetWalletsUseCase;
 use crate::use_cases::get_wallet::GetWalletUseCase;
+
+use crate::domain::types::{UserId, WalletId};
 
 pub struct AppState {
     pub create_user_use_case: CreateUserUseCase,
@@ -29,7 +32,7 @@ pub fn routes(state: Arc<AppState>) -> Router {
         .with_state(state)
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct CreateUserRequest {
     pub name: String,
     pub email: String,
@@ -37,6 +40,14 @@ pub struct CreateUserRequest {
 
 // Handler: Crear un usuario base
 // POST /users
+#[utoipa::path(
+    post,
+    path = "/users",
+    request_body = CreateUserRequest,
+    responses(
+        (status = 200, description = "Usuario creado exitosamente", body = inline(crate::api::response::ApiResponse<serde_json::Value>))
+    )
+)]
 pub async fn create_user(
     State(app_state): State<Arc<AppState>>,
     Json(payload): Json<CreateUserRequest>,
@@ -53,7 +64,7 @@ pub async fn create_user(
     }))))
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct CreateWalletRequest {
     pub user_id: Uuid,
     pub currency: String,
@@ -63,13 +74,21 @@ pub struct CreateWalletRequest {
 // Handler: Crear una nueva billetera para un usuario
 // POST /wallets
 // Header: x-user-id requerido
+#[utoipa::path(
+    post,
+    path = "/wallets",
+    request_body = CreateWalletRequest,
+    responses(
+        (status = 200, description = "Billetera creada exitosamente", body = inline(crate::api::response::ApiResponse<serde_json::Value>))
+    )
+)]
 pub async fn create_wallet(
     State(app_state): State<Arc<AppState>>,
     Json(payload): Json<CreateWalletRequest>,
 ) -> Result<Json<ApiResponse<serde_json::Value>>, ApiError> {
     let wallet = app_state
         .create_wallet_use_case
-        .execute(payload.user_id, payload.currency, payload.label)
+        .execute(UserId(payload.user_id), payload.currency, payload.label)
         .await?;
 
     Ok(Json(ApiResponse::success(serde_json::json!({
@@ -83,13 +102,23 @@ pub async fn create_wallet(
 
 // Handler: Listar todas las billeteras del usuario actual
 // GET /wallets
+#[utoipa::path(
+    get,
+    path = "/wallets",
+    responses(
+        (status = 200, description = "Billeteras listadas exitosamente", body = inline(crate::api::response::ApiResponse<serde_json::Value>))
+    ),
+    params(
+        ("user_id" = Uuid, Path, description = "ID del usuario"),
+    )
+)]
 pub async fn list_user_wallets(
     State(app_state): State<Arc<AppState>>,
     Path(user_id): Path<Uuid>,
 ) -> Result<Json<ApiResponse<serde_json::Value>>, ApiError> {
     let wallets = app_state
         .list_user_wallets_use_case
-        .execute(user_id)
+        .execute(UserId(user_id))
         .await?;
 
     Ok(Json(ApiResponse::success(serde_json::json!({
@@ -99,13 +128,23 @@ pub async fn list_user_wallets(
 
 // Handler: Ver saldo y detalles de una billetera especifica
 // GET /wallets/{id}
+#[utoipa::path(
+    get,
+    path = "/wallets/{id}",
+    responses(
+        (status = 200, description = "Detalles de la billetera obtenidos", body = inline(crate::api::response::ApiResponse<serde_json::Value>))
+    ),
+    params(
+        ("id" = Uuid, Path, description = "ID de la billetera")
+    )
+)]
 pub async fn get_wallet_details(
     State(app_state): State<Arc<AppState>>,
     Path(wallet_id): Path<Uuid>,
 ) -> Result<Json<ApiResponse<serde_json::Value>>, ApiError> {
     let wallet = app_state
         .get_wallet_details_use_case
-        .execute(wallet_id)
+        .execute(WalletId(wallet_id))
         .await?;
 
     Ok(Json(ApiResponse::success(serde_json::json!({

@@ -1,15 +1,15 @@
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use sqlx::FromRow;
-use uuid::Uuid;
 
 use crate::domain::entities::{User, Wallet};
+use crate::domain::types::{UserId, WalletId};
 
 // Modelo de Base de Datos para User (especifico de SQLx)
 // Representa la tabla 'users' en PostgreSQL.
 #[derive(Debug, FromRow)]
 pub struct UserModel {
-    pub id: Uuid,
+    pub id: UserId,
     pub username: String,
     pub email: String,
     pub created_at: DateTime<Utc>,
@@ -46,8 +46,8 @@ impl From<UserModel> for User {
 // Representa la tabla 'wallets'. Incluye 'created_at' que no está en la entidad de dominio.
 #[derive(Debug, FromRow)]
 pub struct WalletModel {
-    pub id: Uuid,
-    pub user_id: Uuid,
+    pub id: WalletId,
+    pub user_id: UserId,
     pub label: String,
     pub balance: Decimal,
     pub currency: String,

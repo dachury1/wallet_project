@@ -1,4 +1,5 @@
 use crate::domain::entities::{Transaction, TransactionStatus, TransactionType};
+use crate::domain::types::{TransactionId, WalletId};
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use sqlx::FromRow;
@@ -9,9 +10,9 @@ use uuid::Uuid;
 // Diseñado para ser un reflejo directo (1:1) de la estructura de la tabla.
 #[derive(Debug, FromRow)]
 pub struct TransactionModel {
-    pub id: Uuid,
-    pub source_wallet_id: Option<Uuid>,
-    pub destination_wallet_id: Uuid,
+    pub id: TransactionId,
+    pub source_wallet_id: Option<WalletId>,
+    pub destination_wallet_id: WalletId,
     pub amount: Decimal,
     pub status: TransactionStatus,
     pub transaction_type: TransactionType,

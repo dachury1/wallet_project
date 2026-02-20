@@ -16,6 +16,22 @@ use transaction_service::{
         process_transaction::ProcessTransactionUseCase,
     },
 };
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
+
+#[derive(OpenApi)]
+#[openapi(
+    paths(
+        transaction_service::api::http_routes::initiate_transaction,
+        transaction_service::api::http_routes::get_transaction_details,
+        transaction_service::api::http_routes::get_wallet_history
+    ),
+    components(schemas(
+        transaction_service::api::http_routes::CreateTransactionRequest,
+        transaction_service::api::response::ApiResponse<serde_json::Value>
+    ))
+)]
+struct ApiDoc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -59,7 +75,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     // 7. Configurar Rutas y Servidor
-    let app = routes(app_state);
+    let app = routes(app_state)
+        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()));
 
     let host = env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
     let port = env::var("PORT").unwrap_or_else(|_| "3000".to_string());

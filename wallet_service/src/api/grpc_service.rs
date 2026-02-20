@@ -50,7 +50,7 @@ impl WalletService for WalletGrpcService {
 
         match self
             .process_movement_use_case
-            .execute(wallet_id, amount_to_reserve)
+            .execute(crate::domain::types::WalletId(wallet_id), amount_to_reserve)
             .await
         {
             Ok(_) => {

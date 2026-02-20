@@ -1,8 +1,8 @@
 use crate::domain::{
     entities::Transaction, error::TransactionError, repository::TransactionRepository,
+    types::WalletId,
 };
 use std::sync::Arc;
-use uuid::Uuid;
 
 /// Caso de uso para obtener el historial de transacciones de una billetera.
 ///
@@ -51,7 +51,7 @@ impl GetWalletHistoryUseCase {
     /// let history = use_case.execute(wallet_id).await.unwrap();
     /// ```
     #[tracing::instrument(name = "GetWalletHistoryUseCase::execute", skip(self))]
-    pub async fn execute(&self, wallet_id: Uuid) -> Result<Vec<Transaction>, TransactionError> {
+    pub async fn execute(&self, wallet_id: WalletId) -> Result<Vec<Transaction>, TransactionError> {
         self.transaction_repo.find_by_wallet_id(wallet_id).await
     }
 }

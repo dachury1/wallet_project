@@ -41,6 +41,7 @@ impl IntoResponse for ApiError {
             },
             ApiError::Wallet(e) => match e {
                 WalletError::NotFound(_) => (StatusCode::NOT_FOUND, e.to_string()),
+                WalletError::UserNotFound(_) => (StatusCode::NOT_FOUND, e.to_string()),
                 WalletError::InvalidData(_) => (StatusCode::BAD_REQUEST, e.to_string()),
                 WalletError::InsufficientFunds(_) => (StatusCode::BAD_REQUEST, e.to_string()),
                 WalletError::ConcurrencyError(_) => (StatusCode::CONFLICT, e.to_string()),

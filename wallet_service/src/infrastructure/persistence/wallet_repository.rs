@@ -1,11 +1,11 @@
 use crate::domain::entities::Wallet;
 use crate::domain::error::WalletError;
 use crate::domain::repository::WalletRepository;
+use crate::domain::types::{UserId, WalletId};
 use crate::infrastructure::persistence::models::WalletModel;
 use async_trait::async_trait;
 use rust_decimal::Decimal;
 use sqlx::PgPool;
-use uuid::Uuid;
 
 /// Repositorio de Billeteras basado en PostgreSQL.
 pub struct PostgresWalletRepository {
@@ -21,7 +21,7 @@ impl PostgresWalletRepository {
 #[async_trait]
 impl WalletRepository for PostgresWalletRepository {
     /// Busca una billetera por su ID.
-    async fn find_by_id(&self, id: Uuid) -> Result<Option<Wallet>, WalletError> {
+    async fn find_by_id(&self, id: WalletId) -> Result<Option<Wallet>, WalletError> {
         let model_opt = sqlx::query_as::<_, WalletModel>(
             r#"
             SELECT * FROM wallets
@@ -37,7 +37,7 @@ impl WalletRepository for PostgresWalletRepository {
     }
 
     /// Busca todas las billeteras asociadas a un usuario.
-    async fn find_by_user_id(&self, user_id: Uuid) -> Result<Vec<Wallet>, WalletError> {
+    async fn find_by_user_id(&self, user_id: UserId) -> Result<Vec<Wallet>, WalletError> {
         let models = sqlx::query_as::<_, WalletModel>(
             r#"
             SELECT * FROM wallets
@@ -84,7 +84,7 @@ impl WalletRepository for PostgresWalletRepository {
     /// Actualiza el balance de forma atómica.
     ///
     /// Se suma (o resta si es negativo) el `amount` al balance actual.
-    async fn update_balance(&self, id: Uuid, amount: Decimal) -> Result<(), WalletError> {
+    async fn update_balance(&self, id: WalletId, amount: Decimal) -> Result<(), WalletError> {
         // Ejecutamos UPDATE directo para atomicidad.
         // Incrementamos la versión para optimistic locking implícito.
         let result = sqlx::query(

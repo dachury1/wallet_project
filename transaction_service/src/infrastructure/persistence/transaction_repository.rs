@@ -1,6 +1,7 @@
 use crate::domain::entities::Transaction;
 use crate::domain::error::TransactionError;
 use crate::domain::repository::TransactionRepository;
+use crate::domain::types::{TransactionId, WalletId};
 use crate::infrastructure::persistence::models::TransactionModel;
 use async_trait::async_trait;
 use sqlx::PgPool;
@@ -91,8 +92,7 @@ impl TransactionRepository for PostgresTransactionRepository {
         }
     }
 
-    /// Busca una transacción por su ID único (UUID).
-    async fn find_by_id(&self, id: Uuid) -> Result<Option<Transaction>, TransactionError> {
+    async fn find_by_id(&self, id: TransactionId) -> Result<Option<Transaction>, TransactionError> {
         let model_opt =
             sqlx::query_as::<_, TransactionModel>(r#"SELECT * FROM transactions WHERE id = $1"#)
                 .bind(id)
@@ -113,7 +113,7 @@ impl TransactionRepository for PostgresTransactionRepository {
     /// Incluye transacciones donde la wallet actúa como origen O destino.
     async fn find_by_wallet_id(
         &self,
-        wallet_id: Uuid,
+        wallet_id: WalletId,
     ) -> Result<Vec<Transaction>, TransactionError> {
         let models = sqlx::query_as::<_, TransactionModel>(
             r#"

@@ -2,9 +2,9 @@ use crate::domain::{
     entities::Wallet,
     error::WalletError,
     repository::{UserRepository, WalletRepository},
+    types::UserId,
 };
 use std::sync::Arc;
-use uuid::Uuid;
 /// Caso de uso que gestiona la creación segura de una Wallet para un Usuario.
 ///
 /// # Examples
@@ -43,7 +43,7 @@ impl CreateWalletUseCase {
     /// ```
     pub async fn execute(
         &self,
-        user_id: Uuid,
+        user_id: UserId,
         currency: String,
         label: String,
     ) -> Result<Wallet, WalletError> {
@@ -54,7 +54,7 @@ impl CreateWalletUseCase {
             .map_err(|e| WalletError::RepositoryError(e.to_string()))?; // Propagamos errores de BD
 
         if user_option.is_none() {
-            return Err(WalletError::NotFound(user_id)); // Solo retornamos NotFound si la opción es None
+            return Err(WalletError::UserNotFound(user_id)); // Solo retornamos UserNotFound si la opción es None
         }
 
         // Construimos usando el patrón Builder (valida interiormente)
@@ -80,7 +80,7 @@ mod tests {
     async fn test_create_wallet_success() {
         let mut mock_user_repo = MockUserRepository::new();
         let mut mock_wallet_repo = MockWalletRepository::new();
-        let user_id = Uuid::new_v4();
+        let user_id = UserId::new();
 
         // Espera que el usuario exista
         mock_user_repo
@@ -116,7 +116,7 @@ mod tests {
     async fn test_create_wallet_user_not_found() {
         let mut mock_user_repo = MockUserRepository::new();
         let mock_wallet_repo = MockWalletRepository::new();
-        let user_id = Uuid::new_v4();
+        let user_id = UserId::new();
 
         // El usuario no existe
         mock_user_repo
@@ -131,14 +131,14 @@ mod tests {
             .execute(user_id, "USD".to_string(), "Main Wallet".to_string())
             .await;
 
-        assert!(matches!(result, Err(WalletError::NotFound(id)) if id == user_id));
+        assert!(matches!(result, Err(WalletError::UserNotFound(id)) if id == user_id));
     }
 
     #[tokio::test]
     async fn test_create_wallet_invalid_currency() {
         let mut mock_user_repo = MockUserRepository::new();
         let mock_wallet_repo = MockWalletRepository::new();
-        let user_id = Uuid::new_v4();
+        let user_id = UserId::new();
 
         mock_user_repo
             .expect_find_by_id()

@@ -1,6 +1,7 @@
-use crate::domain::{entities::Wallet, error::WalletError, repository::WalletRepository};
+use crate::domain::{
+    entities::Wallet, error::WalletError, repository::WalletRepository, types::WalletId,
+};
 use std::sync::Arc;
-use uuid::Uuid;
 
 /// Casos de uso para obtener los detalles de una billetera en particular.
 ///
@@ -49,7 +50,7 @@ impl GetWalletUseCase {
     /// let wallet = use_case.execute(wallet_id).await.unwrap();
     /// ```
     #[tracing::instrument(name = "GetWalletUseCase::execute", skip(self))]
-    pub async fn execute(&self, wallet_id: Uuid) -> Result<Wallet, WalletError> {
+    pub async fn execute(&self, wallet_id: WalletId) -> Result<Wallet, WalletError> {
         self.wallet_repo
             .find_by_id(wallet_id)
             .await?
@@ -60,13 +61,13 @@ impl GetWalletUseCase {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::repository::MockWalletRepository;
+    use crate::domain::{repository::MockWalletRepository, types::UserId};
 
     #[tokio::test]
     async fn test_get_wallet_success() {
         let mut mock_repo = MockWalletRepository::new();
-        let wallet_id = Uuid::new_v4();
-        let user_id = Uuid::new_v4();
+        let wallet_id = WalletId::new();
+        let user_id = UserId::new();
 
         mock_repo
             .expect_find_by_id()
@@ -95,7 +96,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_wallet_not_found() {
         let mut mock_repo = MockWalletRepository::new();
-        let wallet_id = Uuid::new_v4();
+        let wallet_id = WalletId::new();
 
         mock_repo
             .expect_find_by_id()
@@ -116,7 +117,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_wallet_repository_error() {
         let mut mock_repo = MockWalletRepository::new();
-        let wallet_id = Uuid::new_v4();
+        let wallet_id = WalletId::new();
 
         mock_repo
             .expect_find_by_id()

@@ -1,8 +1,8 @@
 use crate::domain::{
     entities::Transaction, error::TransactionError, repository::TransactionRepository,
+    types::TransactionId,
 };
 use std::sync::Arc;
-use uuid::Uuid;
 
 /// Caso de uso para obtener los detalles de una única transacción.
 ///
@@ -50,7 +50,10 @@ impl GetTransactionDetailsUseCase {
     /// let details = use_case.execute(tx_id).await.unwrap();
     /// ```
     #[tracing::instrument(name = "GetTransactionDetailsUseCase::execute", skip(self))]
-    pub async fn execute(&self, transaction_id: Uuid) -> Result<Transaction, TransactionError> {
+    pub async fn execute(
+        &self,
+        transaction_id: TransactionId,
+    ) -> Result<Transaction, TransactionError> {
         self.transaction_repo
             .find_by_id(transaction_id)
             .await?

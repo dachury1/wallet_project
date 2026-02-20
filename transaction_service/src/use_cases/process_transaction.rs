@@ -3,6 +3,7 @@ use crate::domain::{
     error::TransactionError,
     gateways::WalletGateway,
     repository::TransactionRepository,
+    types::WalletId,
 };
 use rust_decimal::Decimal;
 use std::sync::Arc;
@@ -48,15 +49,17 @@ impl ProcessTransactionUseCase {
     ///
     /// # Examples
     /// ```ignore
+    /// use transaction_service::domain::entities::Transaction;
+    /// use transaction_service::domain::types::WalletId;
     /// use uuid::Uuid;
-    /// use rust_decimal_macros::dec;
-    /// let dest = Uuid::new_v4();
-    /// let tx = use_case.execute(None, dest, dec!(100.0), Uuid::new_v4()).await.unwrap();
+    /// use rust_decimal::Decimal;
+    /// let dest = WalletId::new();
+    /// let tx = use_case.execute(None, dest, Decimal::from(100), Uuid::new_v4()).await.unwrap();
     /// ```
     pub async fn execute(
         &self,
-        source_wallet: Option<Uuid>,
-        dest_wallet: Uuid,
+        source_wallet: Option<WalletId>,
+        dest_wallet: WalletId,
         amount: Decimal,
         correlation_id: Uuid, // Now mandatory
     ) -> Result<Transaction, TransactionError> {
@@ -145,6 +148,7 @@ mod tests {
     use crate::domain::error::TransactionError;
     use crate::domain::gateways::WalletGateway;
     use crate::domain::repository::TransactionRepository;
+    use crate::domain::types::{TransactionId, WalletId};
     use async_trait::async_trait;
     use chrono::{DateTime, Utc};
     use mockall::mock;
@@ -160,8 +164,8 @@ mod tests {
         impl TransactionRepository for TransactionRepositoryImpl {
             async fn save(&self, transaction: Transaction) -> Result<Transaction, TransactionError>;
             async fn update(&self, transaction: Transaction) -> Result<Transaction, TransactionError>;
-            async fn find_by_id(&self, id: Uuid) -> Result<Option<Transaction>, TransactionError>;
-            async fn find_by_wallet_id(&self, wallet_id: Uuid) -> Result<Vec<Transaction>, TransactionError>;
+            async fn find_by_id(&self, id: TransactionId) -> Result<Option<Transaction>, TransactionError>;
+            async fn find_by_wallet_id(&self, wallet_id: WalletId) -> Result<Vec<Transaction>, TransactionError>;
             async fn find_by_correlation_id(&self, correlation_id: Uuid) -> Result<Option<Transaction>, TransactionError>;
             async fn find_pending_older_than(&self, timestamp: DateTime<Utc>) -> Result<Vec<Transaction>, TransactionError>;
         }
@@ -184,9 +188,9 @@ mod tests {
 
         let correlation_id = Uuid::new_v4();
         let existing_tx = Transaction {
-            id: Uuid::new_v4(),
-            source_wallet_id: Some(Uuid::new_v4()),
-            destination_wallet_id: Uuid::new_v4(),
+            id: TransactionId::new(),
+            source_wallet_id: Some(WalletId::new()),
+            destination_wallet_id: WalletId::new(),
             amount: Decimal::from(100),
             status: TransactionStatus::COMPLETED,
             transaction_type: TransactionType::TRANSFER,
@@ -206,8 +210,8 @@ mod tests {
         // Act
         let result = use_case
             .execute(
-                Some(Uuid::new_v4()),
-                Uuid::new_v4(),
+                Some(WalletId::new()),
+                WalletId::new(),
                 Decimal::from(100),
                 correlation_id,
             )
@@ -226,8 +230,8 @@ mod tests {
         let mut mock_repo = MockTransactionRepositoryImpl::new();
         let mut mock_gateway = MockWalletGatewayImpl::new();
 
-        let source_wallet = Uuid::new_v4();
-        let dest_wallet = Uuid::new_v4();
+        let source_wallet = WalletId::new();
+        let dest_wallet = WalletId::new();
         let amount = Decimal::from(100);
         let correlation_id = Uuid::new_v4();
 
@@ -274,8 +278,8 @@ mod tests {
         let mut mock_repo = MockTransactionRepositoryImpl::new();
         let mut mock_gateway = MockWalletGatewayImpl::new();
 
-        let source_wallet = Uuid::new_v4();
-        let dest_wallet = Uuid::new_v4();
+        let source_wallet = WalletId::new();
+        let dest_wallet = WalletId::new();
         let amount = Decimal::from(50);
         let correlation_id = Uuid::new_v4();
 

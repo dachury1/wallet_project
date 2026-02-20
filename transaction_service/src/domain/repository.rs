@@ -1,5 +1,6 @@
 use crate::domain::entities::Transaction;
 use crate::domain::error::TransactionError;
+use crate::domain::types::{TransactionId, WalletId};
 use async_trait::async_trait;
 use uuid::Uuid;
 
@@ -23,7 +24,7 @@ pub trait TransactionRepository: Send + Sync {
     async fn update(&self, transaction: Transaction) -> Result<Transaction, TransactionError>;
 
     /// Busca una transacción por su ID único.
-    async fn find_by_id(&self, id: Uuid) -> Result<Option<Transaction>, TransactionError>;
+    async fn find_by_id(&self, id: TransactionId) -> Result<Option<Transaction>, TransactionError>;
 
     /// Recupera el historial de transacciones de una billetera.
     ///
@@ -31,7 +32,7 @@ pub trait TransactionRepository: Send + Sync {
     /// como donde es `destination` (créditos).
     async fn find_by_wallet_id(
         &self,
-        wallet_id: Uuid,
+        wallet_id: WalletId,
     ) -> Result<Vec<Transaction>, TransactionError>;
 
     /// Busca una transacción por su ID de Correlación (Idempotency Key).

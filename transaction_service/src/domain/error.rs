@@ -1,10 +1,12 @@
 use thiserror::Error;
 use uuid::Uuid;
 
+use crate::domain::types::TransactionId;
+
 #[derive(Error, Debug, PartialEq)]
 pub enum TransactionError {
     #[error("Transaction not found with ID: {0}")]
-    NotFound(Uuid),
+    NotFound(TransactionId),
 
     #[error("Invalid transaction state: {0}")]
     InvalidState(String),

@@ -3,6 +3,7 @@ use rust_decimal::Decimal;
 use sqlx::postgres::PgPoolOptions;
 use transaction_service::domain::entities::{Transaction, TransactionStatus, TransactionType};
 use transaction_service::domain::repository::TransactionRepository;
+use transaction_service::domain::types::{TransactionId, WalletId};
 use transaction_service::infrastructure::persistence::transaction_repository::PostgresTransactionRepository;
 use uuid::Uuid;
 
@@ -34,10 +35,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create dummy transaction
     let new_transaction = Transaction {
-        id: Uuid::new_v4(),                     // Random UUID
-        source_wallet_id: Some(Uuid::new_v4()), // Random Source Wallet
-        destination_wallet_id: Uuid::new_v4(),  // Random Dest Wallet
-        amount: Decimal::new(10050, 2),         // 100.50
+        id: TransactionId::new(),                // Random TransactionId
+        source_wallet_id: Some(WalletId::new()), // Random Source Wallet
+        destination_wallet_id: WalletId::new(),  // Random Dest Wallet
+        amount: Decimal::new(10050, 2),          // 100.50
         status: TransactionStatus::PENDING,
         transaction_type: TransactionType::TRANSFER,
         created_at: Utc::now(),

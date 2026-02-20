@@ -4,6 +4,8 @@ use std::env;
 use std::sync::Arc;
 use tracing::info;
 use tracing_subscriber::FmtSubscriber;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 use wallet_service::{
     api::{
         grpc_service::WalletGrpcService,
@@ -20,6 +22,21 @@ use wallet_service::{
     },
 };
 
+#[derive(OpenApi)]
+#[openapi(
+    paths(
+        wallet_service::api::http_routes::create_user,
+        wallet_service::api::http_routes::create_wallet,
+        wallet_service::api::http_routes::list_user_wallets,
+        wallet_service::api::http_routes::get_wallet_details
+    ),
+    components(schemas(
+        wallet_service::api::http_routes::CreateUserRequest,
+        wallet_service::api::http_routes::CreateWalletRequest,
+        wallet_service::api::response::ApiResponse<serde_json::Value>
+    ))
+)]
+struct ApiDoc;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 1. Cargar variables de entorno
@@ -82,7 +99,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     // 8. Configurar Rutas y Servidor HTTP
-    let app = routes(app_state);
+    let app = routes(app_state)
+        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()));
 
     let host = env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
     let port = env::var("PORT").unwrap_or_else(|_| "3000".to_string());

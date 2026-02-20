@@ -1,10 +1,10 @@
 use crate::domain::entities::User;
 use crate::domain::error::UserError;
 use crate::domain::repository::UserRepository;
+use crate::domain::types::UserId;
 use crate::infrastructure::persistence::models::UserModel;
 use async_trait::async_trait;
 use sqlx::PgPool;
-use uuid::Uuid;
 
 /// Repositorio de Usuarios basado en PostgreSQL.
 ///
@@ -33,7 +33,7 @@ impl UserRepository for PostgresUserRepository {
     ///
     /// Retorna `None` si el usuario no existe, en lugar de un error.
     /// Utiliza `fetch_optional` para manejar elegantemente el caso de "no encontrado".
-    async fn find_by_id(&self, id: Uuid) -> Result<Option<User>, UserError> {
+    async fn find_by_id(&self, id: UserId) -> Result<Option<User>, UserError> {
         // Consultamos el modelo de base de datos
         let model_opt = sqlx::query_as::<_, UserModel>(
             r#"

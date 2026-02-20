@@ -1,10 +1,10 @@
+use crate::domain::types::{UserId, WalletId};
 use thiserror::Error;
-use uuid::Uuid;
 
 #[derive(Error, Debug)]
 pub enum UserError {
     #[error("User not found with ID: {0}")]
-    NotFound(Uuid),
+    NotFound(UserId),
 
     #[error("User already exists with username: {0}")]
     UsernameTaken(String),
@@ -22,13 +22,16 @@ pub enum UserError {
 #[derive(Error, Debug)]
 pub enum WalletError {
     #[error("Wallet not found with ID: {0}")]
-    NotFound(Uuid),
+    NotFound(WalletId),
+
+    #[error("User not found with ID: {0}")]
+    UserNotFound(UserId),
 
     #[error("Invalid wallet data: {0}")]
     InvalidData(String),
 
     #[error("Insufficient funds in wallet: {0}")]
-    InsufficientFunds(Uuid),
+    InsufficientFunds(WalletId),
 
     #[error("Optimistic locking conversion error: {0}")]
     ConcurrencyError(String),

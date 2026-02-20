@@ -1,7 +1,7 @@
 use crate::domain::error::WalletError;
 use crate::domain::repository::WalletRepository;
+use crate::domain::types::WalletId;
 use std::sync::Arc;
-use uuid::Uuid;
 
 /// Casos de uso para procesar movimientos (depósitos/retiros) en una billetera.
 ///
@@ -59,7 +59,7 @@ impl ProcessMovementUseCase {
     #[tracing::instrument(name = "ProcessMovementUseCase::execute", skip(self))]
     pub async fn execute(
         &self,
-        wallet_id: Uuid,
+        wallet_id: WalletId,
         amount: rust_decimal::Decimal,
     ) -> Result<(), WalletError> {
         self.wallet_repo.update_balance(wallet_id, amount).await
@@ -76,7 +76,7 @@ mod tests {
     #[tokio::test]
     async fn test_process_movement_success() {
         let mut mock_repo = MockWalletRepository::new();
-        let wallet_id = Uuid::new_v4();
+        let wallet_id = WalletId::new();
         let amount = Decimal::from_str("150.50").unwrap();
 
         mock_repo
@@ -97,7 +97,7 @@ mod tests {
     #[tokio::test]
     async fn test_process_movement_not_found() {
         let mut mock_repo = MockWalletRepository::new();
-        let wallet_id = Uuid::new_v4();
+        let wallet_id = WalletId::new();
         let amount = Decimal::from_str("150.50").unwrap();
 
         mock_repo
@@ -122,7 +122,7 @@ mod tests {
     #[tokio::test]
     async fn test_process_movement_insufficient_funds() {
         let mut mock_repo = MockWalletRepository::new();
-        let wallet_id = Uuid::new_v4();
+        let wallet_id = WalletId::new();
         let amount = Decimal::from_str("-150.50").unwrap();
 
         mock_repo

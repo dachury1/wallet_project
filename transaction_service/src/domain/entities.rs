@@ -3,6 +3,8 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::domain::types::{TransactionId, WalletId};
+
 use super::error::TransactionError;
 
 /// Estado de una transacción en el sistema.
@@ -41,16 +43,17 @@ pub enum TransactionType {
 /// # Examples
 /// ```
 /// use transaction_service::domain::entities::Transaction;
+/// use transaction_service::domain::types::WalletId;
 /// use uuid::Uuid;
-/// use rust_decimal_macros::dec;
+/// use rust_decimal::Decimal;
 ///
-/// let tx = Transaction::new(None, Uuid::new_v4(), dec!(100.0), Uuid::new_v4()).unwrap();
+/// let tx = Transaction::new(None, WalletId::new(), Decimal::from(100), Uuid::new_v4()).unwrap();
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Transaction {
-    pub id: Uuid,
-    pub source_wallet_id: Option<Uuid>, // Nullable
-    pub destination_wallet_id: Uuid,
+    pub id: TransactionId,
+    pub source_wallet_id: Option<WalletId>, // Nullable
+    pub destination_wallet_id: WalletId,
     pub amount: Decimal,
     pub status: TransactionStatus,
     pub transaction_type: TransactionType,
@@ -67,16 +70,17 @@ impl Transaction {
     /// # Examples
     /// ```
     /// use transaction_service::domain::entities::Transaction;
+    /// use transaction_service::domain::types::WalletId;
     /// use uuid::Uuid;
-    /// use rust_decimal_macros::dec;
+    /// use rust_decimal::Decimal;
     ///
     /// let correlation_id = Uuid::new_v4();
-    /// let tx = Transaction::new(None, Uuid::new_v4(), dec!(50.0), correlation_id);
+    /// let tx = Transaction::new(None, WalletId::new(), Decimal::from(50), correlation_id);
     /// assert!(tx.is_ok());
     /// ```
     pub fn new(
-        source_wallet: Option<Uuid>,
-        dest_wallet: Uuid,
+        source_wallet: Option<WalletId>,
+        dest_wallet: WalletId,
         amount: Decimal,
         correlation_id: Uuid,
     ) -> Result<Self, TransactionError> {
@@ -98,7 +102,7 @@ impl Transaction {
 
         // 3. Crear Entidad
         Ok(Self {
-            id: Uuid::new_v4(),
+            id: TransactionId::new(),
             source_wallet_id: source_wallet,
             destination_wallet_id: dest_wallet,
             amount,
@@ -118,8 +122,8 @@ mod tests {
 
     #[test]
     fn test_create_transfer_success() {
-        let source = Uuid::new_v4();
-        let dest = Uuid::new_v4();
+        let source = WalletId::new();
+        let dest = WalletId::new();
         let amount = Decimal::from(100);
         let correlation_id = Uuid::new_v4();
 
@@ -134,7 +138,7 @@ mod tests {
 
     #[test]
     fn test_create_deposit_success() {
-        let dest = Uuid::new_v4();
+        let dest = WalletId::new();
         let amount = Decimal::from(50);
         let correlation_id = Uuid::new_v4();
 
@@ -149,8 +153,8 @@ mod tests {
     #[case(0)]
     #[case(-10)]
     fn test_create_invalid_amount(#[case] amount_val: i64) {
-        let source = Uuid::new_v4();
-        let dest = Uuid::new_v4();
+        let source = WalletId::new();
+        let dest = WalletId::new();
         let correlation_id = Uuid::new_v4();
         let amount = Decimal::from(amount_val);
 
@@ -161,7 +165,7 @@ mod tests {
 
     #[test]
     fn test_create_same_wallet_error() {
-        let wallet_id = Uuid::new_v4();
+        let wallet_id = WalletId::new();
         let amount = Decimal::from(100);
         let correlation_id = Uuid::new_v4();
 

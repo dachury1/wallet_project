@@ -1,9 +1,9 @@
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 use crate::domain::error::{UserError, WalletError};
+use crate::domain::types::{UserId, WalletId};
 
 /// Modelo de Entidad: User.
 /// Representa a un usuario dentro del sistema, con su información básica de identidad.
@@ -17,7 +17,7 @@ use crate::domain::error::{UserError, WalletError};
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
-    pub id: Uuid,
+    pub id: UserId,
     pub username: String, // Unique
     pub email: String,    // Unique
     pub created_at: DateTime<Utc>,
@@ -43,7 +43,7 @@ impl User {
         }
 
         Ok(Self {
-            id: Uuid::new_v4(),
+            id: UserId::new(),
             username,
             email,
             created_at: Utc::now(),
@@ -57,11 +57,12 @@ impl User {
 /// # Examples
 /// ```
 /// use wallet_service::domain::entities::Wallet;
+/// use wallet_service::domain::types::UserId;
 /// use uuid::Uuid;
 ///
 /// let wallet_builder = Wallet::builder();
 /// let wallet = wallet_builder
-///     .user_id(Uuid::new_v4())
+///     .user_id(UserId::new())
 ///     .label("My Wallet".to_string())
 ///     .currency("USD".to_string())
 ///     .build();
@@ -69,8 +70,8 @@ impl User {
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Wallet {
-    pub id: Uuid,
-    pub user_id: Uuid, // FK -> User.id
+    pub id: WalletId,
+    pub user_id: UserId, // FK -> User.id
     pub label: String,
     pub balance: Decimal, // Precisión fija
     pub currency: String, // ISO code
@@ -96,22 +97,23 @@ impl Wallet {
 /// # Examples
 /// ```
 /// use wallet_service::domain::entities::WalletBuilder;
+/// use wallet_service::domain::types::UserId;
 /// use uuid::Uuid;
 ///
 /// let builder = WalletBuilder::default()
-///     .user_id(Uuid::new_v4())
+///     .user_id(UserId::new())
 ///     .label("Savings".to_string())
 ///     .currency("EUR".to_string());
 /// ```
 #[derive(Default)]
 pub struct WalletBuilder {
-    user_id: Option<Uuid>,
+    user_id: Option<UserId>,
     label: Option<String>,
     currency: Option<String>,
 }
 
 impl WalletBuilder {
-    pub fn user_id(mut self, user_id: Uuid) -> Self {
+    pub fn user_id(mut self, user_id: UserId) -> Self {
         self.user_id = Some(user_id);
         self
     }
@@ -131,10 +133,11 @@ impl WalletBuilder {
     /// # Examples
     /// ```
     /// use wallet_service::domain::entities::Wallet;
+    /// use wallet_service::domain::types::UserId;
     /// use uuid::Uuid;
     ///
     /// let wallet = Wallet::builder()
-    ///     .user_id(Uuid::new_v4())
+    ///     .user_id(UserId::new())
     ///     .label("Main".to_string())
     ///     .currency("USD".to_string())
     ///     .build();
@@ -165,7 +168,7 @@ impl WalletBuilder {
         }
 
         Ok(Wallet {
-            id: Uuid::new_v4(),
+            id: WalletId::new(),
             user_id,
             label,
             balance: Decimal::from(0),
