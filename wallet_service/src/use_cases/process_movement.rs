@@ -45,3 +45,82 @@ impl ProcessMovementUseCase {
         self.wallet_repo.update_balance(wallet_id, amount).await
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::domain::repository::MockWalletRepository;
+    use rust_decimal::Decimal;
+    use std::str::FromStr;
+
+    #[tokio::test]
+    async fn test_process_movement_success() {
+        let mut mock_repo = MockWalletRepository::new();
+        let wallet_id = Uuid::new_v4();
+        let amount = Decimal::from_str("150.50").unwrap();
+
+        mock_repo
+            .expect_update_balance()
+            .with(
+                mockall::predicate::eq(wallet_id),
+                mockall::predicate::eq(amount),
+            )
+            .times(1)
+            .returning(|_, _| Ok(()));
+
+        let use_case = ProcessMovementUseCase::new(Arc::new(mock_repo));
+        let result = use_case.execute(wallet_id, amount).await;
+
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_process_movement_not_found() {
+        let mut mock_repo = MockWalletRepository::new();
+        let wallet_id = Uuid::new_v4();
+        let amount = Decimal::from_str("150.50").unwrap();
+
+        mock_repo
+            .expect_update_balance()
+            .with(
+                mockall::predicate::eq(wallet_id),
+                mockall::predicate::eq(amount),
+            )
+            .times(1)
+            .returning(|id, _| Err(WalletError::NotFound(id)));
+
+        let use_case = ProcessMovementUseCase::new(Arc::new(mock_repo));
+        let result = use_case.execute(wallet_id, amount).await;
+
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            WalletError::NotFound(id) => assert_eq!(id, wallet_id),
+            _ => panic!("Expected NotFound error"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_process_movement_insufficient_funds() {
+        let mut mock_repo = MockWalletRepository::new();
+        let wallet_id = Uuid::new_v4();
+        let amount = Decimal::from_str("-150.50").unwrap();
+
+        mock_repo
+            .expect_update_balance()
+            .with(
+                mockall::predicate::eq(wallet_id),
+                mockall::predicate::eq(amount),
+            )
+            .times(1)
+            .returning(move |id, _| Err(WalletError::InsufficientFunds(id)));
+
+        let use_case = ProcessMovementUseCase::new(Arc::new(mock_repo));
+        let result = use_case.execute(wallet_id, amount).await;
+
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            WalletError::InsufficientFunds(id) => assert_eq!(id, wallet_id),
+            _ => panic!("Expected InsufficientFunds error"),
+        }
+    }
+}

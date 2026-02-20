@@ -39,3 +39,81 @@ impl GetWalletUseCase {
             .ok_or(WalletError::NotFound(wallet_id))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::domain::repository::MockWalletRepository;
+
+    #[tokio::test]
+    async fn test_get_wallet_success() {
+        let mut mock_repo = MockWalletRepository::new();
+        let wallet_id = Uuid::new_v4();
+        let user_id = Uuid::new_v4();
+
+        mock_repo
+            .expect_find_by_id()
+            .with(mockall::predicate::eq(wallet_id))
+            .times(1)
+            .returning(move |_| {
+                Ok(Some(
+                    Wallet::builder()
+                        .user_id(user_id)
+                        .currency("USD".to_string())
+                        .label("Main Wallet".to_string())
+                        .build()
+                        .unwrap(),
+                ))
+            });
+
+        let use_case = GetWalletUseCase::new(Arc::new(mock_repo));
+        let result = use_case.execute(wallet_id).await;
+
+        assert!(result.is_ok());
+        let wallet = result.unwrap();
+        assert_eq!(wallet.user_id, user_id);
+        assert_eq!(wallet.currency, "USD");
+    }
+
+    #[tokio::test]
+    async fn test_get_wallet_not_found() {
+        let mut mock_repo = MockWalletRepository::new();
+        let wallet_id = Uuid::new_v4();
+
+        mock_repo
+            .expect_find_by_id()
+            .with(mockall::predicate::eq(wallet_id))
+            .times(1)
+            .returning(|_| Ok(None));
+
+        let use_case = GetWalletUseCase::new(Arc::new(mock_repo));
+        let result = use_case.execute(wallet_id).await;
+
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            WalletError::NotFound(id) => assert_eq!(id, wallet_id),
+            _ => panic!("Expected NotFound error"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_get_wallet_repository_error() {
+        let mut mock_repo = MockWalletRepository::new();
+        let wallet_id = Uuid::new_v4();
+
+        mock_repo
+            .expect_find_by_id()
+            .with(mockall::predicate::eq(wallet_id))
+            .times(1)
+            .returning(|_| Err(WalletError::RepositoryError("DB disconnected".to_string())));
+
+        let use_case = GetWalletUseCase::new(Arc::new(mock_repo));
+        let result = use_case.execute(wallet_id).await;
+
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            WalletError::RepositoryError(_) => (),
+            _ => panic!("Expected RepositoryError"),
+        }
+    }
+}

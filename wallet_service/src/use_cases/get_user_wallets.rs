@@ -35,3 +35,85 @@ impl GetWalletsUseCase {
         self.wallet_repo.find_by_user_id(user_id).await
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::domain::repository::MockWalletRepository;
+
+    #[tokio::test]
+    async fn test_get_wallets_success_empty() {
+        let mut mock_repo = MockWalletRepository::new();
+        let user_id = Uuid::new_v4();
+
+        mock_repo
+            .expect_find_by_user_id()
+            .with(mockall::predicate::eq(user_id))
+            .times(1)
+            .returning(|_| Ok(vec![]));
+
+        let use_case = GetWalletsUseCase::new(Arc::new(mock_repo));
+        let result = use_case.execute(user_id).await;
+
+        assert!(result.is_ok());
+        let wallets = result.unwrap();
+        assert!(wallets.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_get_wallets_success_with_items() {
+        let mut mock_repo = MockWalletRepository::new();
+        let user_id = Uuid::new_v4();
+
+        mock_repo
+            .expect_find_by_user_id()
+            .with(mockall::predicate::eq(user_id))
+            .times(1)
+            .returning(move |_| {
+                Ok(vec![
+                    Wallet::builder()
+                        .user_id(user_id)
+                        .currency("USD".to_string())
+                        .label("Main Wallet".to_string())
+                        .build()
+                        .unwrap(),
+                    Wallet::builder()
+                        .user_id(user_id)
+                        .currency("EUR".to_string())
+                        .label("Euro Trip".to_string())
+                        .build()
+                        .unwrap(),
+                ])
+            });
+
+        let use_case = GetWalletsUseCase::new(Arc::new(mock_repo));
+        let result = use_case.execute(user_id).await;
+
+        assert!(result.is_ok());
+        let wallets = result.unwrap();
+        assert_eq!(wallets.len(), 2);
+        assert_eq!(wallets[0].currency, "USD");
+        assert_eq!(wallets[1].currency, "EUR");
+    }
+
+    #[tokio::test]
+    async fn test_get_wallets_repository_error() {
+        let mut mock_repo = MockWalletRepository::new();
+        let user_id = Uuid::new_v4();
+
+        mock_repo
+            .expect_find_by_user_id()
+            .with(mockall::predicate::eq(user_id))
+            .times(1)
+            .returning(|_| Err(WalletError::RepositoryError("DB disconnected".to_string())));
+
+        let use_case = GetWalletsUseCase::new(Arc::new(mock_repo));
+        let result = use_case.execute(user_id).await;
+
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            WalletError::RepositoryError(_) => (),
+            _ => panic!("Expected RepositoryError"),
+        }
+    }
+}
