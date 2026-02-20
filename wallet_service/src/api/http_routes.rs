@@ -1,6 +1,5 @@
 use axum::{
     extract::{Path, State},
-    http::StatusCode,
     routing::{get, post},
     Json, Router,
 };
@@ -8,6 +7,8 @@ use serde::Deserialize;
 use std::sync::Arc;
 use uuid::Uuid;
 
+use crate::api::error::ApiError;
+use crate::api::response::ApiResponse;
 use crate::use_cases::create_user::CreateUserUseCase;
 use crate::use_cases::create_wallet::CreateWalletUseCase;
 use crate::use_cases::get_user_wallets::GetWalletsUseCase;
@@ -39,19 +40,17 @@ pub struct CreateUserRequest {
 pub async fn create_user(
     State(app_state): State<Arc<AppState>>,
     Json(payload): Json<CreateUserRequest>,
-) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let result = app_state
+) -> Result<Json<ApiResponse<serde_json::Value>>, ApiError> {
+    let user = app_state
         .create_user_use_case
         .execute(payload.name, payload.email)
-        .await;
-    match result {
-        Ok(user) => Ok(Json(serde_json::json!({
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-        }))),
-        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
-    }
+        .await?;
+
+    Ok(Json(ApiResponse::success(serde_json::json!({
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+    }))))
 }
 
 #[derive(Deserialize)]
@@ -67,21 +66,19 @@ pub struct CreateWalletRequest {
 pub async fn create_wallet(
     State(app_state): State<Arc<AppState>>,
     Json(payload): Json<CreateWalletRequest>,
-) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let result = app_state
+) -> Result<Json<ApiResponse<serde_json::Value>>, ApiError> {
+    let wallet = app_state
         .create_wallet_use_case
         .execute(payload.user_id, payload.currency, payload.label)
-        .await;
-    match result {
-        Ok(wallet) => Ok(Json(serde_json::json!({
-            "id": wallet.id,
-            "user_id": wallet.user_id,
-            "currency": wallet.currency,
-            "balance": wallet.balance,
-            "label": wallet.label,
-        }))),
-        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
-    }
+        .await?;
+
+    Ok(Json(ApiResponse::success(serde_json::json!({
+        "id": wallet.id,
+        "user_id": wallet.user_id,
+        "currency": wallet.currency,
+        "balance": wallet.balance,
+        "label": wallet.label,
+    }))))
 }
 
 // Handler: Listar todas las billeteras del usuario actual
@@ -89,14 +86,15 @@ pub async fn create_wallet(
 pub async fn list_user_wallets(
     State(app_state): State<Arc<AppState>>,
     Path(user_id): Path<Uuid>,
-) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let result = app_state.list_user_wallets_use_case.execute(user_id).await;
-    match result {
-        Ok(wallets) => Ok(Json(serde_json::json!({
-            "wallets": wallets
-        }))),
-        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
-    }
+) -> Result<Json<ApiResponse<serde_json::Value>>, ApiError> {
+    let wallets = app_state
+        .list_user_wallets_use_case
+        .execute(user_id)
+        .await?;
+
+    Ok(Json(ApiResponse::success(serde_json::json!({
+        "wallets": wallets
+    }))))
 }
 
 // Handler: Ver saldo y detalles de una billetera especifica
@@ -104,15 +102,13 @@ pub async fn list_user_wallets(
 pub async fn get_wallet_details(
     State(app_state): State<Arc<AppState>>,
     Path(wallet_id): Path<Uuid>,
-) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let result = app_state
+) -> Result<Json<ApiResponse<serde_json::Value>>, ApiError> {
+    let wallet = app_state
         .get_wallet_details_use_case
         .execute(wallet_id)
-        .await;
-    match result {
-        Ok(wallet) => Ok(Json(serde_json::json!({
-            "wallet": wallet
-        }))),
-        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
-    }
+        .await?;
+
+    Ok(Json(ApiResponse::success(serde_json::json!({
+        "wallet": wallet
+    }))))
 }

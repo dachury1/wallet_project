@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package wallet;
+
+service WalletService {
+    rpc ValidateAndReserve(ValidateAndReserveRequest) returns (ValidateAndReserveResponse);
+    rpc ConfirmBalanceUpdate(ConfirmBalanceUpdateRequest) returns (ConfirmBalanceUpdateResponse);
+}
+
+message ValidateAndReserveRequest {
+    string wallet_id = 1;
+    string amount = 2; // Using string for precise decimal representation
+    string transaction_id = 3;
+}
+
+message ValidateAndReserveResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message ConfirmBalanceUpdateRequest {
+    string wallet_id = 1;
+    string amount = 2;
+    string transaction_id = 3;
+    bool is_success = 4; // True if transaction succeeded, false if aborted (compensate)
+}
+
+message ConfirmBalanceUpdateResponse {
+    bool success = 1;
+    string message = 2;
+}
