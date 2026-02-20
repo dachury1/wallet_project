@@ -13,3 +13,6 @@ target/
 # User-specific history/workspace files
 .history/
 .vscode/
+
+# local documentation
+.documentation/
