@@ -13,14 +13,14 @@ use crate::domain::types::{UserId, WalletId};
 /// use wallet_service::domain::entities::User;
 ///
 /// let user = User::new("johndoe".to_string(), "john@example.com".to_string()).unwrap();
-/// assert_eq!(user.username, "johndoe");
+/// assert_eq!(user.username(), "johndoe");
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
-    pub id: UserId,
-    pub username: String, // Unique
-    pub email: String,    // Unique
-    pub created_at: DateTime<Utc>,
+    id: UserId,
+    username: String, // Unique
+    email: String,    // Unique
+    created_at: DateTime<Utc>,
 }
 
 impl User {
@@ -49,6 +49,44 @@ impl User {
             created_at: Utc::now(),
         })
     }
+
+    /// Reconstruye una instancia de `User` desde los datos persistidos.
+    /// Esto es un constructor cerrado (`new(...)`) para uso de la capa de persistencia
+    /// que regresa errores de validación si existen datos inválidos en la BD.
+    pub fn reconstitute(
+        id: UserId,
+        username: String,
+        email: String,
+        created_at: DateTime<Utc>,
+    ) -> Result<Self, UserError> {
+        if username.trim().is_empty() || email.trim().is_empty() {
+            return Err(UserError::InvalidData(
+                "Username and email cannot be empty".to_string(),
+            ));
+        }
+        Ok(Self {
+            id,
+            username,
+            email,
+            created_at,
+        })
+    }
+
+    pub fn id(&self) -> UserId {
+        self.id
+    }
+
+    pub fn username(&self) -> &str {
+        &self.username
+    }
+
+    pub fn email(&self) -> &str {
+        &self.email
+    }
+
+    pub fn created_at(&self) -> DateTime<Utc> {
+        self.created_at
+    }
 }
 
 /// Modelo de Entidad: Wallet.
@@ -70,12 +108,12 @@ impl User {
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Wallet {
-    pub id: WalletId,
-    pub user_id: UserId, // FK -> User.id
-    pub label: String,
-    pub balance: Decimal, // Precisión fija
-    pub currency: String, // ISO code
-    pub version: i32,     // Optimistic Locking
+    id: WalletId,
+    user_id: UserId, // FK -> User.id
+    label: String,
+    balance: Decimal, // Precisión fija
+    currency: String, // ISO code
+    version: i32,     // Optimistic Locking
 }
 
 impl Wallet {
@@ -89,6 +127,63 @@ impl Wallet {
     /// ```
     pub fn builder() -> WalletBuilder {
         WalletBuilder::default()
+    }
+
+    /// Reconstruye una billetera cargada desde la persistencia o en memoria.
+    /// Valida los datos esenciales siguiendo reglas de dominio básicas.
+    pub fn reconstitute(
+        id: WalletId,
+        user_id: UserId,
+        label: String,
+        balance: Decimal,
+        currency: String,
+        version: i32,
+    ) -> Result<Self, WalletError> {
+        if label.trim().is_empty() {
+            return Err(WalletError::InvalidData(
+                "La etiqueta de la wallet no puede estar en blanco".into(),
+            ));
+        }
+
+        let currency = currency.trim().to_uppercase();
+        if currency.len() != 3 {
+            return Err(WalletError::InvalidData(
+                "La divisa debe ser un código ISO de 3 letras".into(),
+            ));
+        }
+
+        Ok(Self {
+            id,
+            user_id,
+            label,
+            balance,
+            currency,
+            version,
+        })
+    }
+
+    pub fn id(&self) -> WalletId {
+        self.id
+    }
+
+    pub fn user_id(&self) -> UserId {
+        self.user_id
+    }
+
+    pub fn label(&self) -> &str {
+        &self.label
+    }
+
+    pub fn balance(&self) -> Decimal {
+        self.balance
+    }
+
+    pub fn currency(&self) -> &str {
+        &self.currency
+    }
+
+    pub fn version(&self) -> i32 {
+        self.version
     }
 }
 

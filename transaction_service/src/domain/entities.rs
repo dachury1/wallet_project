@@ -51,14 +51,14 @@ pub enum TransactionType {
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Transaction {
-    pub id: TransactionId,
-    pub source_wallet_id: Option<WalletId>, // Nullable
-    pub destination_wallet_id: WalletId,
-    pub amount: Decimal,
-    pub status: TransactionStatus,
-    pub transaction_type: TransactionType,
-    pub created_at: DateTime<Utc>,
-    pub correlation_id: Uuid, // Ya no es opcional
+    id: TransactionId,
+    source_wallet_id: Option<WalletId>, // Nullable
+    destination_wallet_id: WalletId,
+    amount: Decimal,
+    status: TransactionStatus,
+    transaction_type: TransactionType,
+    created_at: DateTime<Utc>,
+    correlation_id: Uuid, // Ya no es opcional
 }
 
 impl Transaction {
@@ -112,6 +112,73 @@ impl Transaction {
             correlation_id,
         })
     }
+
+    /// Reconstruye una instancia de `Transaction` desde los datos persistidos.
+    pub fn reconstitute(
+        id: TransactionId,
+        source_wallet_id: Option<WalletId>,
+        destination_wallet_id: WalletId,
+        amount: Decimal,
+        status: TransactionStatus,
+        transaction_type: TransactionType,
+        created_at: DateTime<Utc>,
+        correlation_id: Uuid,
+    ) -> Result<Self, TransactionError> {
+        if amount <= Decimal::ZERO {
+            return Err(TransactionError::InvalidAmount);
+        }
+        if let Some(src) = source_wallet_id {
+            if src == destination_wallet_id {
+                return Err(TransactionError::SameWallet);
+            }
+        }
+        Ok(Self {
+            id,
+            source_wallet_id,
+            destination_wallet_id,
+            amount,
+            status,
+            transaction_type,
+            created_at,
+            correlation_id,
+        })
+    }
+
+    pub fn id(&self) -> TransactionId {
+        self.id
+    }
+
+    pub fn source_wallet_id(&self) -> Option<WalletId> {
+        self.source_wallet_id
+    }
+
+    pub fn destination_wallet_id(&self) -> WalletId {
+        self.destination_wallet_id
+    }
+
+    pub fn amount(&self) -> Decimal {
+        self.amount
+    }
+
+    pub fn status(&self) -> TransactionStatus {
+        self.status
+    }
+
+    pub fn transaction_type(&self) -> TransactionType {
+        self.transaction_type
+    }
+
+    pub fn created_at(&self) -> DateTime<Utc> {
+        self.created_at
+    }
+
+    pub fn correlation_id(&self) -> Uuid {
+        self.correlation_id
+    }
+
+    pub fn update_status(&mut self, new_status: TransactionStatus) {
+        self.status = new_status;
+    }
 }
 
 #[cfg(test)]
@@ -129,11 +196,11 @@ mod tests {
 
         let tx = Transaction::new(Some(source), dest, amount, correlation_id).unwrap();
 
-        assert_eq!(tx.transaction_type, TransactionType::TRANSFER);
-        assert_eq!(tx.status, TransactionStatus::PENDING);
-        assert_eq!(tx.amount, amount);
-        assert_eq!(tx.source_wallet_id, Some(source));
-        assert_eq!(tx.destination_wallet_id, dest);
+        assert_eq!(tx.transaction_type(), TransactionType::TRANSFER);
+        assert_eq!(tx.status(), TransactionStatus::PENDING);
+        assert_eq!(tx.amount(), amount);
+        assert_eq!(tx.source_wallet_id(), Some(source));
+        assert_eq!(tx.destination_wallet_id(), dest);
     }
 
     #[test]
@@ -144,9 +211,9 @@ mod tests {
 
         let tx = Transaction::new(None, dest, amount, correlation_id).unwrap();
 
-        assert_eq!(tx.transaction_type, TransactionType::DEPOSIT);
-        assert_eq!(tx.status, TransactionStatus::PENDING);
-        assert_eq!(tx.source_wallet_id, None);
+        assert_eq!(tx.transaction_type(), TransactionType::DEPOSIT);
+        assert_eq!(tx.status(), TransactionStatus::PENDING);
+        assert_eq!(tx.source_wallet_id(), None);
     }
 
     #[rstest]

@@ -34,26 +34,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let repository = PostgresTransactionRepository::new(pool);
 
     // Create dummy transaction
-    let new_transaction = Transaction {
-        id: TransactionId::new(),                // Random TransactionId
-        source_wallet_id: Some(WalletId::new()), // Random Source Wallet
-        destination_wallet_id: WalletId::new(),  // Random Dest Wallet
-        amount: Decimal::new(10050, 2),          // 100.50
-        status: TransactionStatus::PENDING,
-        transaction_type: TransactionType::TRANSFER,
-        created_at: Utc::now(),
-        correlation_id: Uuid::new_v4(),
-    };
+    let new_transaction = Transaction::reconstitute(
+        TransactionId::new(),   // Random TransactionId
+        Some(WalletId::new()),  // Random Source Wallet
+        WalletId::new(),        // Random Dest Wallet
+        Decimal::new(10050, 2), // 100.50
+        TransactionStatus::PENDING,
+        TransactionType::TRANSFER,
+        Utc::now(),
+        Uuid::new_v4(),
+    )
+    .expect("Failed to create mock transaction");
 
     println!("Attempting to save transaction: {:?}", new_transaction);
 
     match repository.save(new_transaction.clone()).await {
         Ok(saved) => {
             println!("✅ Transaction saved successfully!");
-            println!("Saved ID: {}", saved.id);
-            println!("Status: {:?}", saved.status);
-            println!("Amount: {}", saved.amount);
-            println!("Type: {:?}", saved.transaction_type);
+            println!("Saved ID: {}", saved.id());
+            println!("Status: {:?}", saved.status());
+            println!("Amount: {}", saved.amount());
+            println!("Type: {:?}", saved.transaction_type());
         }
         Err(e) => {
             eprintln!("❌ Failed to save transaction: {:?}", e);

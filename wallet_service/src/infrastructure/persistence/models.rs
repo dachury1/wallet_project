@@ -21,10 +21,10 @@ pub struct UserModel {
 impl From<User> for UserModel {
     fn from(u: User) -> Self {
         Self {
-            id: u.id,
-            username: u.username,
-            email: u.email,
-            created_at: u.created_at,
+            id: u.id(),
+            username: u.username().to_string(),
+            email: u.email().to_string(),
+            created_at: u.created_at(),
         }
     }
 }
@@ -33,12 +33,9 @@ impl From<User> for UserModel {
 // Permite reconstruir la entidad de dominio al leer de la base de datos.
 impl From<UserModel> for User {
     fn from(m: UserModel) -> Self {
-        Self {
-            id: m.id,
-            username: m.username,
-            email: m.email,
-            created_at: m.created_at,
-        }
+        // Para conversiones desde base de datos usamos reconstitute
+        User::reconstitute(m.id, m.username, m.email, m.created_at)
+            .expect("Invalid User state from DB")
     }
 }
 
@@ -60,12 +57,12 @@ pub struct WalletModel {
 impl From<Wallet> for WalletModel {
     fn from(w: Wallet) -> Self {
         Self {
-            id: w.id,
-            user_id: w.user_id,
-            label: w.label,
-            balance: w.balance,
-            currency: w.currency,
-            version: w.version,
+            id: w.id(),
+            user_id: w.user_id(),
+            label: w.label().to_string(),
+            balance: w.balance(),
+            currency: w.currency().to_string(),
+            version: w.version(),
             // Asignamos la fecha actual (UTC) al persistir.
             // IMPORTANTE: Esto asume que estamos creando el registro.
             // Para updates, se debería usar una query que ignore este campo o preserve el valor original.
@@ -78,13 +75,7 @@ impl From<Wallet> for WalletModel {
 // Ignoramos el campo 'created_at' del modelo ya que la entidad no lo necesita.
 impl From<WalletModel> for Wallet {
     fn from(w: WalletModel) -> Self {
-        Self {
-            id: w.id,
-            user_id: w.user_id,
-            label: w.label,
-            balance: w.balance,
-            currency: w.currency,
-            version: w.version,
-        }
+        Wallet::reconstitute(w.id, w.user_id, w.label, w.balance, w.currency, w.version)
+            .expect("Invalid Wallet state from DB")
     }
 }

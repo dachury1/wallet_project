@@ -88,7 +88,7 @@ impl TransactionRepository for PostgresTransactionRepository {
 
         match updated_model {
             Some(m) => Ok(m.into()),
-            None => Err(TransactionError::NotFound(transaction.id)),
+            None => Err(TransactionError::NotFound(transaction.id())),
         }
     }
 

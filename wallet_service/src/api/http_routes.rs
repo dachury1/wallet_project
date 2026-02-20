@@ -58,9 +58,9 @@ pub async fn create_user(
         .await?;
 
     Ok(Json(ApiResponse::success(serde_json::json!({
-        "id": user.id,
-        "username": user.username,
-        "email": user.email,
+        "id": user.id(),
+        "username": user.username(),
+        "email": user.email(),
     }))))
 }
 
@@ -92,11 +92,11 @@ pub async fn create_wallet(
         .await?;
 
     Ok(Json(ApiResponse::success(serde_json::json!({
-        "id": wallet.id,
-        "user_id": wallet.user_id,
-        "currency": wallet.currency,
-        "balance": wallet.balance,
-        "label": wallet.label,
+        "id": wallet.id(),
+        "user_id": wallet.user_id(),
+        "currency": wallet.currency(),
+        "balance": wallet.balance(),
+        "label": wallet.label(),
     }))))
 }
 

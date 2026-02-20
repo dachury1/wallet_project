@@ -104,10 +104,8 @@ impl ProcessTransactionUseCase {
             Ok(true) => {
                 // Happy Path: El Wallet Service confirmó el movimiento.
                 // Actualizamos el estado local a `COMPLETED`.
-                let success_transaction = Transaction {
-                    status: TransactionStatus::COMPLETED,
-                    ..saved_transaction
-                };
+                let mut success_transaction = saved_transaction;
+                success_transaction.update_status(TransactionStatus::COMPLETED);
                 self.transaction_repo
                     .update(success_transaction)
                     .await
@@ -118,10 +116,8 @@ impl ProcessTransactionUseCase {
             Ok(false) | Err(_) => {
                 // Failure Path: El Wallet Service rechazó (fondos insuficientes) o falló la comunicación.
                 // Debemos marcar la transacción como `FAILED` para cerrar el ciclo de vida.
-                let failed_transaction = Transaction {
-                    status: TransactionStatus::FAILED,
-                    ..saved_transaction
-                };
+                let mut failed_transaction = saved_transaction;
+                failed_transaction.update_status(TransactionStatus::FAILED);
 
                 // Best-effort rollback: Intentamos guardar el estado de fallo.
                 // Ignoramos el resultado de este update (`let _`) porque nuestro objetivo principal
@@ -187,16 +183,17 @@ mod tests {
         let mock_gateway = MockWalletGatewayImpl::new();
 
         let correlation_id = Uuid::new_v4();
-        let existing_tx = Transaction {
-            id: TransactionId::new(),
-            source_wallet_id: Some(WalletId::new()),
-            destination_wallet_id: WalletId::new(),
-            amount: Decimal::from(100),
-            status: TransactionStatus::COMPLETED,
-            transaction_type: TransactionType::TRANSFER,
-            created_at: Utc::now(),
+        let existing_tx = Transaction::reconstitute(
+            TransactionId::new(),
+            Some(WalletId::new()),
+            WalletId::new(),
+            Decimal::from(100),
+            TransactionStatus::COMPLETED,
+            TransactionType::TRANSFER,
+            Utc::now(),
             correlation_id,
-        };
+        )
+        .unwrap();
         let expected_tx = existing_tx.clone();
 
         mock_repo
@@ -220,8 +217,8 @@ mod tests {
         // Assert
         assert!(result.is_ok());
         let tx = result.unwrap();
-        assert_eq!(tx.id, expected_tx.id);
-        assert_eq!(tx.status, TransactionStatus::COMPLETED);
+        assert_eq!(tx.id(), expected_tx.id());
+        assert_eq!(tx.status(), TransactionStatus::COMPLETED);
     }
 
     #[tokio::test]
@@ -255,7 +252,7 @@ mod tests {
         mock_repo
             .expect_update()
             .with(function(|tx: &Transaction| {
-                tx.status == TransactionStatus::COMPLETED
+                tx.status() == TransactionStatus::COMPLETED
             }))
             .times(1)
             .returning(|tx| Ok(tx));
@@ -297,7 +294,7 @@ mod tests {
         mock_repo
             .expect_update()
             .with(function(|tx: &Transaction| {
-                tx.status == TransactionStatus::FAILED
+                tx.status() == TransactionStatus::FAILED
             }))
             .times(1)
             .returning(|tx| Ok(tx));

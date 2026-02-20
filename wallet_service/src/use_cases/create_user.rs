@@ -91,8 +91,8 @@ mod tests {
 
         assert!(result.is_ok());
         let created_user = result.unwrap();
-        assert_eq!(created_user.username, username);
-        assert_eq!(created_user.email, email);
+        assert_eq!(created_user.username(), username);
+        assert_eq!(created_user.email(), email);
     }
 
     #[tokio::test]

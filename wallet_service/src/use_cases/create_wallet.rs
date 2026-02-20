@@ -87,12 +87,15 @@ mod tests {
             .expect_find_by_id()
             .with(mockall::predicate::eq(user_id))
             .returning(move |_| {
-                Ok(Some(User {
-                    id: user_id,
-                    username: "test_user".into(),
-                    email: "test@example.com".into(),
-                    created_at: chrono::Utc::now(),
-                }))
+                Ok(Some(
+                    User::reconstitute(
+                        user_id,
+                        "test_user".into(),
+                        "test@example.com".into(),
+                        chrono::Utc::now(),
+                    )
+                    .unwrap(),
+                ))
             });
 
         // Espera que se cree el wallet y reciba de vuelta
@@ -107,9 +110,9 @@ mod tests {
 
         assert!(result.is_ok());
         let wallet = result.unwrap();
-        assert_eq!(wallet.user_id, user_id);
-        assert_eq!(wallet.currency, "USD");
-        assert_eq!(wallet.label, "Main Wallet");
+        assert_eq!(wallet.user_id(), user_id);
+        assert_eq!(wallet.currency(), "USD");
+        assert_eq!(wallet.label(), "Main Wallet");
     }
 
     #[tokio::test]
@@ -144,12 +147,15 @@ mod tests {
             .expect_find_by_id()
             .with(mockall::predicate::eq(user_id))
             .returning(move |_| {
-                Ok(Some(User {
-                    id: user_id,
-                    username: "test_user".into(),
-                    email: "test@example.com".into(),
-                    created_at: chrono::Utc::now(),
-                }))
+                Ok(Some(
+                    User::reconstitute(
+                        user_id,
+                        "test_user".into(),
+                        "test@example.com".into(),
+                        chrono::Utc::now(),
+                    )
+                    .unwrap(),
+                ))
             });
 
         let use_case =

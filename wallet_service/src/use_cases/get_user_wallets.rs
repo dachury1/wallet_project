@@ -110,8 +110,8 @@ mod tests {
         assert!(result.is_ok());
         let wallets = result.unwrap();
         assert_eq!(wallets.len(), 2);
-        assert_eq!(wallets[0].currency, "USD");
-        assert_eq!(wallets[1].currency, "EUR");
+        assert_eq!(wallets[0].currency(), "USD");
+        assert_eq!(wallets[1].currency(), "EUR");
     }
 
     #[tokio::test]

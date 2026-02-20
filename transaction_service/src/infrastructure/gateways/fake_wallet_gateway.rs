@@ -19,11 +19,13 @@ impl WalletGateway for FakeWalletGateway {
     async fn process_movement(&self, transaction: &Transaction) -> Result<bool, TransactionError> {
         info!(
             " [FakeWalletGateway] Processing movement for Transaction ID: {}",
-            transaction.id
+            transaction.id()
         );
         info!(
             " [FakeWalletGateway] Amount: {}, Source: {:?}, Dest: {}",
-            transaction.amount, transaction.source_wallet_id, transaction.destination_wallet_id
+            transaction.amount(),
+            transaction.source_wallet_id(),
+            transaction.destination_wallet_id()
         );
 
         // Simulamos un pequeño delay de red

@@ -89,8 +89,8 @@ mod tests {
 
         assert!(result.is_ok());
         let wallet = result.unwrap();
-        assert_eq!(wallet.user_id, user_id);
-        assert_eq!(wallet.currency, "USD");
+        assert_eq!(wallet.user_id(), user_id);
+        assert_eq!(wallet.currency(), "USD");
     }
 
     #[tokio::test]

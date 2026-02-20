@@ -51,24 +51,31 @@ impl RetryFailedTransactionJob {
                 for mut tx in transactions {
                     info!(
                         "Retrying transaction {} (Created at: {})",
-                        tx.correlation_id, tx.created_at
+                        tx.correlation_id(),
+                        tx.created_at()
                     );
 
                     // Reintentamos la comunicación con el Wallet Service
                     match self.wallet_gateway.process_movement(&tx).await {
                         Ok(true) => {
-                            info!("Transaction {} approved by Wallet Service on retry.", tx.id);
-                            tx.status = TransactionStatus::COMPLETED;
+                            info!(
+                                "Transaction {} approved by Wallet Service on retry.",
+                                tx.id()
+                            );
+                            tx.update_status(TransactionStatus::COMPLETED);
                         }
                         Ok(false) => {
-                            warn!("Transaction {} rejected by Wallet Service on retry.", tx.id);
-                            tx.status = TransactionStatus::FAILED;
+                            warn!(
+                                "Transaction {} rejected by Wallet Service on retry.",
+                                tx.id()
+                            );
+                            tx.update_status(TransactionStatus::FAILED);
                         }
                         Err(e) => {
                             // Si falla la comunicación, logueamos y seguimos (se reintentará en la próxima ejecución)
                             error!(
                                 "Communication error with Wallet Service for tx {}: {:?}. Keeping as PENDING.",
-                                tx.id, e
+                                tx.id(), e
                             );
                             continue;
                         }
@@ -78,10 +85,15 @@ impl RetryFailedTransactionJob {
                     if let Err(e) = self.transaction_repo.update(tx.clone()).await {
                         error!(
                             "FATAL: Failed to update status for tx {} after retry: {:?}",
-                            tx.id, e
+                            tx.id(),
+                            e
                         );
                     } else {
-                        info!("Transaction {} status updated to {:?}", tx.id, tx.status);
+                        info!(
+                            "Transaction {} status updated to {:?}",
+                            tx.id(),
+                            tx.status()
+                        );
                     }
                 }
             }
