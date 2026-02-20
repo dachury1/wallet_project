@@ -10,7 +10,11 @@ use transaction_service::{
         gateways::fake_wallet_gateway::FakeWalletGateway,
         persistence::transaction_repository::PostgresTransactionRepository,
     },
-    use_cases::process_transaction::ProcessTransactionUseCase,
+    use_cases::{
+        get_transaction_details::GetTransactionDetailsUseCase,
+        get_wallet_history::GetWalletHistoryUseCase,
+        process_transaction::ProcessTransactionUseCase,
+    },
 };
 
 #[tokio::main]
@@ -43,10 +47,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 5. Instanciar Casos de Uso
     let process_transaction_use_case =
         ProcessTransactionUseCase::new(transaction_repo.clone(), wallet_gateway.clone());
+    let get_transaction_details_use_case =
+        GetTransactionDetailsUseCase::new(transaction_repo.clone());
+    let get_wallet_history_use_case = GetWalletHistoryUseCase::new(transaction_repo.clone());
 
     // 6. Configurar Estado de la App Axum
     let app_state = Arc::new(AppState {
         process_transaction_use_case,
+        get_transaction_details_use_case,
+        get_wallet_history_use_case,
     });
 
     // 7. Configurar Rutas y Servidor

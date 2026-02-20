@@ -1,5 +1,5 @@
 use axum::{
-    extract::State,
+    extract::{Path, State},
     http::StatusCode,
     routing::{get, post},
     Json, Router,
@@ -10,18 +10,22 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::domain::error::TransactionError;
+use crate::use_cases::get_transaction_details::GetTransactionDetailsUseCase;
+use crate::use_cases::get_wallet_history::GetWalletHistoryUseCase;
 use crate::use_cases::process_transaction::ProcessTransactionUseCase;
 
 // Estado compartido de la aplicación
 pub struct AppState {
     pub process_transaction_use_case: ProcessTransactionUseCase,
+    pub get_transaction_details_use_case: GetTransactionDetailsUseCase,
+    pub get_wallet_history_use_case: GetWalletHistoryUseCase,
 }
 
 pub fn routes(state: Arc<AppState>) -> Router {
     Router::new()
         .route("/transactions", post(initiate_transaction))
-        .route("/transactions/{id}", get(get_transaction_details))
-        .route("/transactions/wallet/{wallet_id}", get(get_wallet_history))
+        .route("/transactions/:id", get(get_transaction_details))
+        .route("/transactions/wallet/:wallet_id", get(get_wallet_history))
         .with_state(state) // Inyectamos el estado (Casos de Uso)
 }
 
@@ -70,16 +74,41 @@ pub async fn initiate_transaction(
 }
 
 // Handler: Ver detalle de una transaccion
-// GET /transactions/{id}
-// Nota: Aqui ocurre la magia: Busca la transaccion y llama por gRPC a Wallet
-pub async fn get_transaction_details() -> impl axum::response::IntoResponse {
-    // TODO: Implementar logica para obtener detalles y llamar a Wallet Service via gRPC
-    (StatusCode::NOT_IMPLEMENTED, "Not Implemented Yet")
+// GET /transactions/:id
+pub async fn get_transaction_details(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let result = state.get_transaction_details_use_case.execute(id).await;
+
+    match result {
+        Ok(transaction) => Ok(Json(serde_json::json!({
+            "status": "success",
+            "data": transaction
+        }))),
+        Err(err) => {
+            let status = match err {
+                TransactionError::NotFound(_) => StatusCode::NOT_FOUND,
+                _ => StatusCode::INTERNAL_SERVER_ERROR,
+            };
+            Err((status, err.to_string()))
+        }
+    }
 }
 
-// Handler: Historial de movimientos de una billetera especifica (paginado)
-// GET /transactions/wallet/{wallet_id}
-pub async fn get_wallet_history() -> impl axum::response::IntoResponse {
-    // TODO: Implementar logica de historial paginado
-    (StatusCode::NOT_IMPLEMENTED, "Not Implemented Yet")
+// Handler: Historial de movimientos de una billetera especifica
+// GET /transactions/wallet/:wallet_id
+pub async fn get_wallet_history(
+    State(state): State<Arc<AppState>>,
+    Path(wallet_id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let result = state.get_wallet_history_use_case.execute(wallet_id).await;
+
+    match result {
+        Ok(transactions) => Ok(Json(serde_json::json!({
+            "status": "success",
+            "data": transactions
+        }))),
+        Err(err) => Err((StatusCode::INTERNAL_SERVER_ERROR, err.to_string())),
+    }
 }

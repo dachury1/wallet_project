@@ -17,3 +17,8 @@ uuid = { version = "1.0", features = ["v4", "serde"] } # Added for domain entiti
 chrono = { version = "0.4", features = ["serde"] }    # Added for domain entities
 async-trait = "0.1.89"
 rust_decimal = "1.40.0"
+thiserror = "2.0.18"
+serde_json = "1.0.149"
+
+[dev-dependencies]
+mockall = "0.14.0"
