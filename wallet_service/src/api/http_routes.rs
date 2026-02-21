@@ -28,7 +28,7 @@ pub fn routes(state: Arc<AppState>) -> Router {
     Router::new()
         .route("/users", post(create_user))
         .route("/wallets", post(create_wallet).get(list_user_wallets))
-        .route("/wallets/:id", get(get_wallet_details))
+        .route("/wallets/{id}", get(get_wallet_details))
         .with_state(state)
 }
 

@@ -2,6 +2,7 @@
 name = "transaction_service"
 version = "0.1.0"
 edition = "2021"
+default-run = "transaction_service"
 
 [dependencies]
 anyhow = "1.0.101"

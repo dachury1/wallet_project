@@ -28,8 +28,8 @@ pub struct AppState {
 pub fn routes(state: Arc<AppState>) -> Router {
     Router::new()
         .route("/transactions", post(initiate_transaction))
-        .route("/transactions/:id", get(get_transaction_details))
-        .route("/transactions/wallet/:wallet_id", get(get_wallet_history))
+        .route("/transactions/{id}", get(get_transaction_details))
+        .route("/transactions/wallet/{wallet_id}", get(get_wallet_history))
         .with_state(state) // Inyectamos el estado (Casos de Uso)
 }
 
