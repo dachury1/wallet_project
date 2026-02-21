@@ -27,7 +27,8 @@ pub struct AppState {
 pub fn routes(state: Arc<AppState>) -> Router {
     Router::new()
         .route("/users", post(create_user))
-        .route("/wallets", post(create_wallet).get(list_user_wallets))
+        .route("/users/{user_id}/wallets", get(list_user_wallets))
+        .route("/wallets", post(create_wallet))
         .route("/wallets/{id}", get(get_wallet_details))
         .with_state(state)
 }
@@ -101,10 +102,10 @@ pub async fn create_wallet(
 }
 
 // Handler: Listar todas las billeteras del usuario actual
-// GET /wallets
+// GET /users/{user_id}/wallets
 #[utoipa::path(
     get,
-    path = "/wallets",
+    path = "/users/{user_id}/wallets",
     responses(
         (status = 200, description = "Billeteras listadas exitosamente", body = inline(crate::api::response::ApiResponse<serde_json::Value>))
     ),

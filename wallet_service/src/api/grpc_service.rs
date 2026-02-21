@@ -43,10 +43,9 @@ impl WalletService for WalletGrpcService {
         let amount = Decimal::from_str(&req.amount)
             .map_err(|_| Status::invalid_argument("El monto no es un decimal válido"))?;
 
-        // 2. Ejecutar el caso de uso (en un sistema real de reserva, usaríamos un caso de uso específico
-        // que bloquee el dinero, pero aquí usamos process_movement_use_case a modo de demostración)
-        // Convertimos el monto de reserva a negativo (simulando que el dinero se descuenta)
-        let amount_to_reserve = -amount;
+        // El Transaction Service enviará un monto positivo para depósitos
+        // y negativo para retiros/reservas.
+        let amount_to_reserve = amount;
 
         match self
             .process_movement_use_case

@@ -26,10 +26,17 @@ impl IntoResponse for ApiError {
             TransactionError::SameWallet => (StatusCode::BAD_REQUEST, self.0.to_string()),
             TransactionError::InvalidState(_) => (StatusCode::BAD_REQUEST, self.0.to_string()),
             TransactionError::IdempotencyError(_) => (StatusCode::CONFLICT, self.0.to_string()),
-            TransactionError::RepositoryError(_) | TransactionError::GatewayError(_) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Internal server error".to_string(),
-            ),
+            TransactionError::RepositoryError(ref e) => {
+                tracing::error!("Database Repository Error: {}", e);
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Internal server error".to_string(),
+                )
+            }
+            TransactionError::GatewayError(ref e) => {
+                tracing::error!("Wallet Gateway Error: {}", e);
+                (StatusCode::BAD_REQUEST, self.0.to_string())
+            }
         };
 
         let body = Json(json!({

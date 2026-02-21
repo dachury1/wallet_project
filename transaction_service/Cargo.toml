@@ -27,3 +27,7 @@ utoipa-swagger-ui = { version = "9.0.2", features = ["axum"] }
 [dev-dependencies]
 mockall = "0.14.0"
 rstest = "0.26.1"
+
+[build-dependencies]
+tonic-build = "0.12"
+protoc-bin-vendored = "3.0.0"

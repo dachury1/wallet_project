@@ -7,7 +7,7 @@ use tracing_subscriber::FmtSubscriber;
 use transaction_service::{
     api::http_routes::{routes, AppState},
     infrastructure::{
-        gateways::fake_wallet_gateway::FakeWalletGateway,
+        gateways::grpc_wallet_gateway::GrpcWalletGateway,
         persistence::transaction_repository::PostgresTransactionRepository,
     },
     use_cases::{
@@ -57,8 +57,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 4. Instanciar Dependencias (Infraestructura)
     let transaction_repo = Arc::new(PostgresTransactionRepository::new(pool));
-    // TODO: Reemplazar FakeWalletGateway con implementación real gRPC cuando esté lista
-    let wallet_gateway = Arc::new(FakeWalletGateway::new());
+
+    let wallet_url =
+        env::var("WALLET_SERVICE_URL").unwrap_or_else(|_| "http://127.0.0.1:4000".to_string());
+    let wallet_gateway = Arc::new(GrpcWalletGateway::new(wallet_url));
 
     // 5. Instanciar Casos de Uso
     let process_transaction_use_case =
